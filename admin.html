@@ -17,6 +17,7 @@
         .btn-pdf { background-color: #e67e22; color: white; border: none; margin-top: 10px; }
         .btn-pdf:hover { background-color: #f39c12; }
         .btn-clear { background-color: #dc3545; color: white; border: none; font-size: 16px; margin-top: 10px; }
+        .btn-clear:hover { background-color: #bd2130; }
         .btn-nav { background-color: #007bff; color: white; border: none; }
         
         /* Destaque para o seletor de etapa ativa */
@@ -104,7 +105,7 @@
 
         async function enviarDados() {
             const etapa = document.getElementById('etapa').value;[cite: 2]
-            const subEtapa = document.getElementById('subEtapa').value; // 'e1' ou 'e2'
+            const subEtapa = document.getElementById('subEtapa').value; 
             const categoria = document.getElementById('categoria').value;[cite: 2]
             const piloto = document.getElementById('piloto').value.trim().toUpperCase();[cite: 2]
             const tempo = document.getElementById('tempo').value;[cite: 2]
@@ -114,7 +115,6 @@
                 return;[cite: 2]
             }
 
-            // Atualiza qual sub-etapa está ativa para o resultados.html sincronizar na hora
             db.ref('configuracao').update({ subEtapaAtiva: subEtapa });
 
             const idPiloto = btoa(categoria + "_" + piloto).replace(/=/g, "");[cite: 2]
