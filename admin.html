@@ -20,13 +20,8 @@
         .btn-clear:hover { background-color: #bd2130; }
         .btn-nav { background-color: #007bff; color: white; border: none; }
         
-        /* Destaque para o seletor de etapa ativa */
-        #subEtapa {
-            background-color: #fff3cd;
-            border: 2px solid #ffc107;
-            font-weight: bold;
-            color: #856404;
-        }
+        #subEtapa { background-color: #fff3cd; border: 2px solid #ffc107; font-weight: bold; color: #856404; }
+        #pilotoSelect { background-color: #e2f0d9; border: 2px solid #385723; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -43,7 +38,8 @@
                 <option value="e2">ETAPA 2 (Lançar Voltas 1 e 2)</option>
             </select>
 
-            <select id="categoria">
+            <!-- SELETOR DE CATEGORIA -->
+            <select id="categoria" onchange="carregarPilotosPorCategoria()">
                 <option value="PRODUCTION">PRODUCTION</option>
                 <option value="SUPER PRODUCTION">SUPER PRODUCTION</option>
                 <option value="PROTOTIPO">PROTOTIPO</option>
@@ -51,7 +47,10 @@
                 <option value="INICIANTE">INICIANTE</option>
             </select>
 
-            <input type="text" id="piloto" placeholder="Nome do Piloto" style="text-transform: uppercase;">
+            <!-- SELETOR DINÂMICO DE PILOTOS -->
+            <select id="pilotoSelect">
+                <option value="">Carregando pilotos...</option>
+            </select>
             
             <input type="text" id="tempo" placeholder="00:00:000" maxlength="9">
 
@@ -59,6 +58,7 @@
             <button class="btn-pdf" onclick="exportarPDF()">RELATÓRIO DE PROVA</button>
             
             <hr>
+            <button class="btn-nav" onclick="window.location.href='cadastro_pilotos.html'" style="background-color: #a5a5a5;">CADASTRAR PILOTOS</button>
             <button class="btn-nav" onclick="window.location.href='alteracao.html'">ALTERAR DADOS</button>
             <button class="btn-nav" onclick="window.location.href='resultados.html'" style="background-color: #6c757d;">VER RESULTADOS</button>
             
@@ -82,6 +82,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        // Escuta o nome da etapa
         db.ref('configuracao/etapaAtual').on('value', (snapshot) => {
             if(snapshot.exists()) {
                 document.getElementById('etapa').value = snapshot.val();
@@ -93,6 +94,29 @@
             db.ref('configuracao').update({ etapaAtual: nome });
         }
 
+        // Função para preencher o Dropdown de pilotos com base na categoria
+        function carregarPilotosPorCategoria() {
+            const catSelecionada = document.getElementById('categoria').value;
+            const seletorPilotos = document.getElementById('pilotoSelect');
+            seletorPilotos.innerHTML = "<option value=''>Carregando pilotos...</option>";
+
+            db.ref('lista_pilotos').orderByChild('categoria').equalTo(catSelecionada).once('value', snapshot => {
+                seletorPilotos.innerHTML = "";
+                const dados = snapshot.val();
+                
+                if (!dados) {
+                    seletorPilotos.innerHTML = "<option value=''>NENHUM PILOTO CADASTRADO</option>";
+                    return;
+                }
+
+                seletorPilotos.innerHTML = "<option value=''>SELECIONE O PILOTO...</option>";
+                for (let key in dados) {
+                    seletorPilotos.innerHTML += `<option value="${dados[key].nome}">${dados[key].nome}</option>`;
+                }
+            });
+        }
+
+        // Máscara de tempo
         document.getElementById('tempo').addEventListener('input', function (e) {
             let v = e.target.value.replace(/\D/g, '');
             if (v.length > 4) {
@@ -107,11 +131,11 @@
             const etapa = document.getElementById('etapa').value;[cite: 2]
             const subEtapa = document.getElementById('subEtapa').value; 
             const categoria = document.getElementById('categoria').value;[cite: 2]
-            const piloto = document.getElementById('piloto').value.trim().toUpperCase();[cite: 2]
+            const piloto = document.getElementById('pilotoSelect').value; // Puxa do Select agora
             const tempo = document.getElementById('tempo').value;[cite: 2]
 
             if (!etapa || !piloto || tempo.length < 9) {[cite: 2]
-                alert("Por favor, preencha todos os campos. O tempo deve ter o formato 00:00:000");[cite: 2]
+                alert("Por favor, preencha todos os campos. Selecione um piloto e digite o tempo no formato 00:00:000");[cite: 2]
                 return;[cite: 2]
             }
 
@@ -135,16 +159,16 @@
                 };
                 novoPiloto[campoV1] = tempo;
                 await ref.set(novoPiloto);
-                alert(`Volta 1 da ${subEtapa.toUpperCase()} salva!`);
+                alert(`Volta 1 da ${subEtapa.toUpperCase()} salva para ${piloto}!`);
             } else {
                 if (!pData[campoV1] || pData[campoV1] === "00:00:000") {
                     let dados = {}; dados[campoV1] = tempo;
                     await ref.update(dados);
-                    alert(`Volta 1 da ${subEtapa.toUpperCase()} salva!`);
+                    alert(`Volta 1 da ${subEtapa.toUpperCase()} salva para ${piloto}!`);
                 } else if (!pData[campoV2] || pData[campoV2] === "00:00:000") {
                     let dados = {}; dados[campoV2] = tempo;
                     await ref.update(dados);
-                    alert(`Volta 2 da ${subEtapa.toUpperCase()} salva!`);
+                    alert(`Volta 2 da ${subEtapa.toUpperCase()} salva para ${piloto}!`);
                 } else {
                     alert(`Este piloto já possui as 2 voltas registradas na ${subEtapa.toUpperCase()}!`);
                 }
@@ -153,14 +177,12 @@
         }
 
         async function limparBanco() {
-            const senha = prompt("CUIDADO: Isso apagará PILOTOS e CONFIGURAÇÕES.\nDigite a senha para confirmar:");
-            
+            const senha = prompt("CUIDADO: Isso apagará PILOTOS e CONFIGURAÇÕES (Mantém a lista cadastrada).\nDigite a senha para confirmar:");
             if (senha === "75999862628") {
                 try {
                     await db.ref('pilotos').remove();
                     await db.ref('configuracao').remove();
-                    
-                    alert("Todos os dados do banco foram resetados com sucesso!");
+                    alert("Os tempos do banco foram resetados com sucesso!");
                     window.location.reload();
                 } catch (error) {
                     alert("Erro ao tentar limpar o banco: " + error.message);
@@ -184,7 +206,6 @@
             return `${String(min).padStart(2,'0')}:${String(seg).padStart(2,'0')}:${String(mil).padStart(3,'0')}`;
         }
 
-        // FUNÇÃO CORRIGIDA: Geração nativa sem carregamento de imagens externas para evitar erros de CORS
         async function exportarPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -194,15 +215,11 @@
             const etapaSnap = await db.ref('configuracao/etapaAtual').once('value');[cite: 2]
             const nomeEtapa = etapaSnap.val() || "Geral";[cite: 2]
 
-            if (!data) { 
-                alert("Não há dados de pilotos salvos para exportar."); 
-                return; 
-            }
+            if (!data) { alert("Não há dados de tempos para exportar."); return; }
 
             let listaPilotos = [];
             for (let k in data) {
                 const p = data[k];
-                
                 const e1v1 = p.e1_v1 || "00:00:000";
                 const e1v2 = p.e1_v2 || "00:00:000";
                 const e2v1 = p.e2_v1 || "00:00:000";
@@ -210,7 +227,6 @@
 
                 const totalE1Ms = tParaMs(e1v1) + tParaMs(e1v2);[cite: 2]
                 const totalE2Ms = tParaMs(e2v1) + tParaMs(e2v2);[cite: 2]
-                
                 const somaGeralMs = totalE1Ms + totalE2Ms;
 
                 listaPilotos.push({ 
@@ -222,12 +238,11 @@
                 });
             }
 
-            // Desenha um cabeçalho estilizado nativo (sem depender de URL externa)
-            doc.setFillColor(40, 44, 52); // Cinza Escuro Premium
+            doc.setFillColor(40, 44, 52);
             doc.rect(10, 10, 190, 28, 'F');
 
             doc.setFontSize(16);[cite: 2]
-            doc.setTextColor(255, 255, 255); // Texto Branco
+            doc.setTextColor(255, 255, 255);
             doc.setFont("helvetica", "bold");
             doc.text(`RELATÓRIO DE PROVA - RACE KRONO`, 15, 22);
 
@@ -263,6 +278,9 @@
             
             doc.save(`Resultado_Acumulado_${nomeEtapa.replace(/\s+/g, '_')}.pdf`);[cite: 2]
         }
+
+        // Executa a primeira carga ao abrir a página
+        carregarPilotosPorCategoria();
     </script>
 </body>
 </html>
