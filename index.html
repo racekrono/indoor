@@ -19,19 +19,16 @@
 
     <div class="header-container">
         <div>
-            <p class="etapa-titulo" id="displayEtapa">CARREGANDO ETAPA...</p>
+            <p class="etapa-titulo" id="displayEtapa">CONECTANDO AO BANCO...</p>
             <p id="dataRelatorio" style="margin: 5px 0; color: #666;"></p>
         </div>
         <div style="text-align: right;">
             <img src="https://raw.githubusercontent.com/racekrono/indoor/refs/heads/main/QR.png" class="qr-code" alt="QR Code">
-            <div class="refresh-info">Atualiza em: <span id="countdown">5</span>s</div>
+            <div class="refresh-info">Sincronizado em Tempo Real</div>
         </div>
     </div>
 
-    <!-- Elemento para sabermos qual etapa o administrador está manipulando (escondido do público) -->
-    <input type="hidden" id="subEtapaAtual" value="e1">
-
-    <div id="conteudoTabelas"></div>
+    <div id="conteudoTabelas">Carregando classificações...</div>
 
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
@@ -49,6 +46,9 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        let subEtapaGlobal = "e1"; // Padrão inicial
+        let nomeEtapaGlobal = "PROVA";
+
         function tParaMs(t) {
             if (!t || t === "00:00:000") return 0;
             const p = t.split(':');
@@ -63,33 +63,41 @@
             return `${String(min).padStart(2,'0')}:${String(seg).padStart(2,'0')}:${String(mil).padStart(3,'0')}`;
         }
 
-        // Fica escutando qual etapa está selecionada na tela principal para filtrar os dados dinamicamente
-        db.ref('configuracao/subEtapaAtiva').on('value', snapshot => {
-            if (snapshot.exists()) {
-                document.getElementById('subEtapaAtual').value = snapshot.val();
-            }
-            renderizar();
+        // 1. Escuta alterações na configuração (Nome da Etapa e Etapa Ativa)
+        db.ref('configuracao').on('value', snapshot => {
+            const config = snapshot.val() || {};
+            nomeEtapaGlobal = config.etapaAtual || "PROVA";
+            subEtapaGlobal = config.subEtapaAtiva || "e1";
+            
+            // Força a atualização dos títulos e dados sempre que o painel mudar de etapa
+            processarEExibir();
         });
 
-        async function renderizar() {
-            const etapaSnap = await db.ref('configuracao/etapaAtual').once('value');
-            const subEtapa = document.getElementById('subEtapaAtual').value; // 'e1' ou 'e2'
-            const numEtapaTexto = subEtapa === 'e1' ? "BATERIA 01" : "BATERIA 02";
+        // 2. Escuta alterações nos pilotos (Sempre que uma nova volta for salva)
+        db.ref('pilotos').on('value', snapshot => {
+            processarEExibir();
+        });
 
-            document.getElementById('displayEtapa').innerText = `${etapaSnap.val() || ""} ${numEtapaTexto}`;
+        function processarEExibir() {
+            const numEtapaTexto = subEtapaGlobal === 'e1' ? "BATERIA 01" : "BATERIA 02";
+            document.getElementById('displayEtapa').innerText = `${nomeEtapaGlobal} - ${numEtapaTexto}`;
             document.getElementById('dataRelatorio').innerText = "Data: " + new Date().toLocaleDateString();
 
             db.ref('pilotos').once('value', snapshot => {
                 const data = snapshot.val();
+                if (!data) {
+                    document.getElementById('conteudoTabelas').innerHTML = "<p>Nenhum tempo registrado para esta etapa.</p>";
+                    return;
+                }
+
                 let lista = [];
                 for (let k in data) {
                     const p = data[k];
                     
-                    // Puxa as voltas APENAS da etapa selecionada no momento
-                    const v1 = p[`${subEtapa}_v1`] || "00:00:000";
-                    const v2 = p[`${subEtapa}_v2`] || "00:00:000";
+                    // Puxa dinamicamente os dados com base na etapa ativa global ('e1' ou 'e2')
+                    const v1 = p[`${subEtapaGlobal}_v1`] || "00:00:000";
+                    const v2 = p[`${subEtapaGlobal}_v2`] || "00:00:000";
 
-                    // Calcula o total estritamente desta etapa em andamento
                     const totalMs = tParaMs(v1) + tParaMs(v2);
 
                     lista.push({ 
@@ -105,7 +113,6 @@
                 let html = '';
 
                 categorias.forEach(cat => {
-                    // Ordena pelo tempo da etapa atual
                     let filtrados = lista.filter(p => p.categoria === cat).sort((a,b) => a.totalMs - b.totalMs);
                     if (filtrados.length > 0) {
                         html += `<h3>CATEGORIA: ${cat}</h3><table><thead><tr><th>Pos</th><th>Piloto</th><th>Volta 1</th><th>Volta 2</th><th>Total</th></tr></thead><tbody>`;
@@ -115,18 +122,10 @@
                         html += `</tbody></table>`;
                     }
                 });
+                
                 document.getElementById('conteudoTabelas').innerHTML = html || "<p>Nenhum tempo registrado para esta etapa.</p>";
             });
         }
-
-        let segundos = 5;
-        setInterval(() => {
-            segundos--;
-            document.getElementById('countdown').innerText = segundos;
-            if (segundos <= 0) { renderizar(); segundos = 5; }
-        }, 1000);
-
-        window.onload = renderizar;
     </script>
 </body>
 </html>
