@@ -8,18 +8,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; text-align: center; background-color: #f0f2f5; padding: 20px; }
-        
-        /* Estilo da Tela de Login */
-        #login-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #f0f2f5;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
         .card { max-width: 450px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         img { width: 180px; margin-bottom: 10px; }
         input, select, button { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
@@ -41,15 +29,6 @@
     </style>
 </head>
 <body>
-
-    <div id="login-overlay">
-        <div class="card">
-            <img src="https://raw.githubusercontent.com/racekrono/adv/refs/heads/main/Logo.png" alt="Logo">
-            <h3>Acesso Restrito</h3>
-            <input type="password" id="senhaAcesso" placeholder="Digite a senha de acesso">
-            <button class="btn-nav" onclick="verificarAcesso()">ENTRAR</button>
-        </div>
-    </div>
 
     <div id="conteudo-sistema">
         <div class="card">
@@ -102,27 +81,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // --- LÓGICA DE ACESSO ---
-        function verificarAcesso() {
-            const senhaDigitada = document.getElementById('senhaAcesso').value;
-            if (senhaDigitada === "75999862628") {
-                document.getElementById('login-overlay').style.display = 'none';
-                sessionStorage.setItem('logado', 'true');
-            } else {
-                alert("Senha incorreta!");
-            }
-        }
-
-        window.onload = function() {
-            if (sessionStorage.getItem('logado') === 'true') {
-                document.getElementById('login-overlay').style.display = 'none';
-            }
-        };
-
-        document.getElementById('senhaAcesso').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') verificarAcesso();
-        });
-
         db.ref('configuracao/etapaAtual').on('value', (snapshot) => {
             if(snapshot.exists()) {
                 document.getElementById('etapa').value = snapshot.val();
@@ -156,7 +114,7 @@
                 return;[cite: 2]
             }
 
-            // ATUALIZAÇÃO SENSACIONAL: Atualiza qual sub-etapa está sendo transmitida para o resultados.html manter o suspense
+            // Atualiza qual sub-etapa está ativa para o resultados.html sincronizar na hora
             db.ref('configuracao').update({ subEtapaAtiva: subEtapa });
 
             const idPiloto = btoa(categoria + "_" + piloto).replace(/=/g, "");[cite: 2]
@@ -229,7 +187,7 @@
             const snapshot = await db.ref('pilotos').once('value');[cite: 2]
             const data = snapshot.val();[cite: 2]
             const etapaSnap = await db.ref('configuracao/etapaAtual').once('value');[cite: 2]
-            const nomeEtapa = etapaSnap.val() || ;[cite: 2]
+            const nomeEtapa = etapaSnap.val() || "Geral";[cite: 2]
 
             if (!data) { alert("Não há dados para exportar."); return; }[cite: 2]
 
@@ -242,11 +200,9 @@
                 const e2v1 = p.e2_v1 || "00:00:000";
                 const e2v2 = p.e2_v2 || "00:00:000";
 
-                // Soma individual de cada etapa
                 const totalE1Ms = tParaMs(e1v1) + tParaMs(e1v2);[cite: 2]
                 const totalE2Ms = tParaMs(e2v1) + tParaMs(e2v2);[cite: 2]
                 
-                // Soma total acumulada de tudo
                 const somaGeralMs = totalE1Ms + totalE2Ms;
 
                 listaPilotos.push({ 
@@ -266,9 +222,9 @@
             img.onload = function() {
                 doc.addImage(img, 'PNG', 10, 10, 30, 30);[cite: 2]
                 doc.setFontSize(18);[cite: 2]
-                doc.text(`RELATÓRIO DE PROVA - CAMPEONATO BAIANO DE RALLY INDOOR 4X4`, 45, 22);
+                doc.text(`RELATÓRIO DE PROVA - CAMPEONATO`, 45, 22);
                 doc.setFontSize(12);[cite: 2]
-                doc.text(`${nomeEtapa}`, 45, 30);
+                doc.text(`${nomeEtapa}`, 45, 30);[cite: 2]
                 doc.setFontSize(10);[cite: 2]
                 doc.text(`${new Date().toLocaleString()}`, 45, 36);[cite: 2]
                 
@@ -282,12 +238,11 @@
                         doc.setTextColor(40);[cite: 2]
                         doc.text(`Categoria: ${cat}`, 10, y);[cite: 2]
                         
-                        // Mostra Total Etapa 1 e Total Etapa 2 nas colunas do meio
                         const rows = filtrados.map((p, i) => [`${i+1}º`, p.piloto, p.tempoE1Str, p.tempoE2Str, p.totalGeralStr]);
                         
                         doc.autoTable({
                             startY: y + 5,
-                            head: [['Pos', 'Piloto', 'Total Bateria 01', 'Total Bateria 02', 'Total Acumulado']],
+                            head: [['Pos', 'Piloto', 'Total Etapa 01', 'Total Etapa 02', 'Total Acumulado']],
                             body: rows,
                             theme: 'grid',
                             headStyles: { fillColor: [243, 156, 18] },[cite: 2]
