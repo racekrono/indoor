@@ -224,7 +224,7 @@
             return (min < 10 ? "0" : "") + min + ":" + (seg < 10 ? "0" : "") + seg + ":" + (mil < 100 ? (mil < 10 ? "00" : "0") : "") + mil;
         }
 
-        // Exportação do PDF
+        // Exportação do PDF com Logomarca Lateral
         function exportarPDF() {
             var { jsPDF } = window.jspdf;
             var doc = new jsPDF();
@@ -259,53 +259,74 @@
                         listaPilotos.push(p);
                     }
 
-                    doc.setFillColor(40, 44, 52);
-                    doc.rect(10, 10, 190, 28, 'F');
+                    // Carrega a logomarca de forma segura antes de renderizar o PDF
+                    var logoUrl = "https://raw.githubusercontent.com/racekrono/adv/refs/heads/main/Logo.png";
+                    var img = new Image();
+                    img.src = logoUrl;
+                    img.crossOrigin = "Anonymous";[cite: 1]
 
-                    doc.setFontSize(16);
-                    doc.setTextColor(255, 255, 255);
-                    doc.text("RELATÓRIO DE PROVA - CAMPEONATO BAIANO DE RALLY INDOOR 4X4", 15, 22);
+                    img.onload = function() {
+                        // Desenha a imagem no canto superior esquerdo (X: 15, Y: 12, Largura: 26, Altura: 26)
+                        doc.addImage(img, 'PNG', 15, 12, 26, 26);[cite: 1]
 
-                    doc.setFontSize(11);
-                    doc.text(nomeEtapa.toUpperCase(), 15, 32);
-                    doc.text(new Date().toLocaleString(), 130, 32);
-                    
-                    var y = 48;
-                    var cats = ["PRODUCTION", "SUPER PRODUCTION", "PROTOTIPO", "UTV", "INICIANTE"];
+                        // Textos do cabeçalho alinhados ao lado da logo (X: 46)
+                        doc.setFontSize(18);
+                        doc.setTextColor(0, 0, 0);
+                        doc.setFont("helvetica", "bold");
+                        doc.text("RELATÓRIO DE PROVA - CAMPEONATO", 46, 22);[cite: 1]
 
-                    cats.forEach(function(cat) {
-                        var filtrados = listaPilotos.filter(function(p) { return p.categoria === cat; });
-                        filtrados.sort(function(a, b) { return a.totalGeralMs - b.totalGeralMs; });
+                        doc.setFontSize(12);
+                        doc.setFont("helvetica", "normal");
+                        doc.text(nomeEtapa, 46, 30);[cite: 1]
+
+                        doc.setFontSize(10);
+                        doc.setTextColor(100, 100, 100);
+                        doc.text(new Date().toLocaleString(), 46, 36);[cite: 1]
                         
-                        if (filtrados.length > 0) {
-                            doc.setFontSize(13);
-                            doc.setTextColor(40, 40, 40);
-                            doc.text("CATEGORIA: " + cat, 10, y);
+                        var y = 52; // Altura inicial da primeira tabela
+                        var cats = ["PRODUCTION", "SUPER PRODUCTION", "PROTOTIPO", "UTV", "INICIANTE"];
+
+                        cats.forEach(function(cat) {
+                            var filtrados = listaPilotos.filter(function(p) { return p.categoria === cat; });
+                            filtrados.sort(function(a, b) { return a.totalGeralMs - b.totalGeralMs; });
                             
-                            var rows = filtrados.map(function(p, i) { 
-                                return [(i+1) + "º", p.piloto, p.tempoE1Str, p.tempoE2Str, p.totalGeralStr]; 
-                            });
-                            
-                            doc.autoTable({
-                                startY: y + 4,
-                                head: [['Pos', 'Piloto', 'Bateria 01', 'Bateria 02', 'Total Acumulado']],
-                                body: rows,
-                                theme: 'grid',
-                                headStyles: { fillColor: [243, 156, 18], textColor: [255, 255, 255] },
-                                styles: { fontSize: 10 }
-                            });
-                            y = doc.lastAutoTable.finalY + 14;
-                        }
-                    });
-                    
-                    doc.save("Resultado_Acumulado_" + nomeEtapa.replace(/\s+/g, '_') + ".pdf");
+                            if (filtrados.length > 0) {
+                                doc.setFontSize(14);
+                                doc.setTextColor(40, 40, 40);
+                                doc.setFont("helvetica", "bold");
+                                doc.text("Categoria: " + cat, 15, y);[cite: 1]
+                                
+                                var rows = filtrados.map(function(p, i) { 
+                                    return [(i+1) + "º", p.piloto, p.tempoE1Str, p.tempoE2Str, p.totalGeralStr]; 
+                                });
+                                
+                                doc.autoTable({
+                                    startY: y + 5,
+                                    head: [['Pos', 'Piloto', 'Total Etapa 01', 'Total Etapa 02', 'Total Acumulado']],
+                                    body: rows,
+                                    theme: 'grid',
+                                    headStyles: { fillColor: [243, 156, 18], textColor: [255, 255, 255], fontStyle: 'bold' },
+                                    styles: { fontSize: 10, font: 'helvetica' }
+                                });
+                                y = doc.lastAutoTable.finalY + 15;[cite: 1]
+                            }
+                        });
+                        
+                        doc.save("Resultado_Acumulado_" + nomeEtapa.replace(/\s+/g, '_') + ".pdf");
+                    };
+
+                    img.onerror = function() {
+                        alert("Não foi possível carregar a imagem da logomarca, gerando relatório sem ela.");
+                        // Código alternativo caso a imagem falhe (evita travar o botão)
+                        doc.setFontSize(18);
+                        doc.text("RELATÓRIO DE PROVA", 15, 20);
+                        doc.save("Resultado_Acumulado_" + nomeEtapa.replace(/\s+/g, '_') + ".pdf");
+                    };
                 });
             }).catch(function(err) {
                 alert("Erro ao gerar PDF: " + err.message);
             });
-        }
-
-        // Executar carga inicial ao abrir a página
+        }        // Executar carga inicial ao abrir a página
         carregarPilotosPorCategoria();
     </script>
 </body>
