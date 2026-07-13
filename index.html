@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Ranking em Tempo Real - Campeonato</title>
+    <title>Ranking em Tempo Real - Crono</title>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px; background-color: #f8f9fa; }
         .header-container { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
@@ -27,6 +27,9 @@
             <div class="refresh-info">Atualiza em: <span id="countdown">5</span>s</div>
         </div>
     </div>
+
+    <!-- Elemento para sabermos qual etapa o administrador está manipulando (escondido do público) -->
+    <input type="hidden" id="subEtapaAtual" value="e1">
 
     <div id="conteudoTabelas"></div>
 
@@ -60,9 +63,20 @@
             return `${String(min).padStart(2,'0')}:${String(seg).padStart(2,'0')}:${String(mil).padStart(3,'0')}`;
         }
 
+        // Fica escutando qual etapa está selecionada na tela principal para filtrar os dados dinamicamente
+        db.ref('configuracao/subEtapaAtiva').on('value', snapshot => {
+            if (snapshot.exists()) {
+                document.getElementById('subEtapaAtual').value = snapshot.val();
+            }
+            renderizar();
+        });
+
         async function renderizar() {
             const etapaSnap = await db.ref('configuracao/etapaAtual').once('value');
-            document.getElementById('displayEtapa').innerText = (etapaSnap.val() || "ETAPA NÃO DEFINIDA") + " - RESULTADO ACUMULADO";
+            const subEtapa = document.getElementById('subEtapaAtual').value; // 'e1' ou 'e2'
+            const numEtapaTexto = subEtapa === 'e1' ? "ETAPA 01" : "ETAPA 02";
+
+            document.getElementById('displayEtapa').innerText = `${etapaSnap.val() || "PROVA"} - ${numEtapaTexto}`;
             document.getElementById('dataRelatorio').innerText = "Data: " + new Date().toLocaleDateString();
 
             db.ref('pilotos').once('value', snapshot => {
@@ -71,24 +85,19 @@
                 for (let k in data) {
                     const p = data[k];
                     
-                    const e1v1 = p.e1_v1 || "00:00:000";
-                    const e1v2 = p.e1_v2 || "00:00:000";
-                    const e2v1 = p.e2_v1 || "00:00:000";
-                    const e2v2 = p.e2_v2 || "00:00:000";
+                    // Puxa as voltas APENAS da etapa selecionada no momento
+                    const v1 = p[`${subEtapa}_v1`] || "00:00:000";
+                    const v2 = p[`${subEtapa}_v2`] || "00:00:000";
 
-                    // Soma das voltas de cada etapa individualmente
-                    const totalE1Ms = tParaMs(e1v1) + tParaMs(e1v2);
-                    const totalE2Ms = tParaMs(e2v1) + tParaMs(e2v2);
-                    
-                    // Soma acumulada final
-                    const somaGeralMs = totalE1Ms + totalE2Ms;
+                    // Calcula o total estritamente desta etapa em andamento
+                    const totalMs = tParaMs(v1) + tParaMs(v2);
 
                     lista.push({ 
                         ...p, 
-                        tempoE1Str: msParaT(totalE1Ms),
-                        tempoE2Str: msParaT(totalE2Ms),
-                        totalGeralMs: somaGeralMs, 
-                        totalGeralStr: msParaT(somaGeralMs) 
+                        volta1: v1,
+                        volta2: v2,
+                        totalMs: totalMs, 
+                        totalStr: msParaT(totalMs) 
                     });
                 }
 
@@ -96,16 +105,17 @@
                 let html = '';
 
                 categorias.forEach(cat => {
-                    let filtrados = lista.filter(p => p.categoria === cat).sort((a,b) => a.totalGeralMs - b.totalGeralMs);
+                    // Ordena pelo tempo da etapa atual
+                    let filtrados = lista.filter(p => p.categoria === cat).sort((a,b) => a.totalMs - b.totalMs);
                     if (filtrados.length > 0) {
-                        html += `<h3>CATEGORIA: ${cat}</h3><table><thead><tr><th>Pos</th><th>Piloto</th><th>Total Etapa 01</th><th>Total Etapa 02</th><th>Total Geral</th></tr></thead><tbody>`;
+                        html += `<h3>CATEGORIA: ${cat}</h3><table><thead><tr><th>Pos</th><th>Piloto</th><th>Volta 1</th><th>Volta 2</th><th>Total</th></tr></thead><tbody>`;
                         filtrados.forEach((p, i) => {
-                            html += `<tr><td>${i+1}º</td><td>${p.piloto}</td><td>${p.tempoE1Str}</td><td>${p.tempoE2Str}</td><td><strong>${p.totalGeralStr}</strong></td></tr>`;
+                            html += `<tr><td>${i+1}º</td><td>${p.piloto}</td><td>${p.volta1}</td><td>${p.volta2}</td><td><strong>${p.totalStr}</strong></td></tr>`;
                         });
                         html += `</tbody></table>`;
                     }
                 });
-                document.getElementById('conteudoTabelas').innerHTML = html || "<p>Nenhum tempo registrado.</p>";
+                document.getElementById('conteudoTabelas').innerHTML = html || "<p>Nenhum tempo registrado para esta etapa.</p>";
             });
         }
 
