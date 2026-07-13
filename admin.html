@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RaceKrono</title>
+    <title>Cronometragem - Admin</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
@@ -259,17 +259,14 @@
                         listaPilotos.push(p);
                     }
 
-                    // Carrega a logomarca de forma segura antes de renderizar o PDF
                     var logoUrl = "https://raw.githubusercontent.com/racekrono/adv/refs/heads/main/Logo.png";
                     var img = new Image();
                     img.src = logoUrl;
                     img.crossOrigin = "Anonymous";[cite: 1]
 
                     img.onload = function() {
-                        // Desenha a imagem no canto superior esquerdo (X: 15, Y: 12, Largura: 26, Altura: 26)
                         doc.addImage(img, 'PNG', 15, 12, 26, 26);[cite: 1]
 
-                        // Textos do cabeçalho alinhados ao lado da logo (X: 46)
                         doc.setFontSize(18);
                         doc.setTextColor(0, 0, 0);
                         doc.setFont("helvetica", "bold");
@@ -283,7 +280,7 @@
                         doc.setTextColor(100, 100, 100);
                         doc.text(new Date().toLocaleString(), 46, 36);[cite: 1]
                         
-                        var y = 52; // Altura inicial da primeira tabela
+                        var y = 52;
                         var cats = ["PRODUCTION", "SUPER PRODUCTION", "PROTOTIPO", "UTV", "INICIANTE"];
 
                         cats.forEach(function(cat) {
@@ -317,7 +314,6 @@
 
                     img.onerror = function() {
                         alert("Não foi possível carregar a imagem da logomarca, gerando relatório sem ela.");
-                        // Código alternativo caso a imagem falhe (evita travar o botão)
                         doc.setFontSize(18);
                         doc.text("RELATÓRIO DE PROVA", 15, 20);
                         doc.save("Resultado_Acumulado_" + nomeEtapa.replace(/\s+/g, '_') + ".pdf");
@@ -326,7 +322,9 @@
             }).catch(function(err) {
                 alert("Erro ao gerar PDF: " + err.message);
             });
-        }        // Executar carga inicial ao abrir a página
+        }
+
+        // Executar carga inicial ao abrir a página
         carregarPilotosPorCategoria();
     </script>
 </body>
