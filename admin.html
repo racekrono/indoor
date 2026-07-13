@@ -82,7 +82,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // Escuta o nome da etapa de forma segura
+        // Escuta o nome da etapa
         db.ref('configuracao/etapaAtual').on('value', (snapshot) => {
             if(snapshot.exists()) {
                 document.getElementById('etapa').value = snapshot.val();
@@ -94,14 +94,14 @@
             db.ref('configuracao').update({ etapaAtual: nome });
         }
 
-        // CORREÇÃO: Função modificada para tratar o banco quando estiver totalmente vazio
+        // FUNÇÃO CORRIGIDA: Sintaxe limpa e sem travas
         function carregarPilotosPorCategoria() {
             const catSelecionada = document.getElementById('categoria').value;
             const seletorPilotos = document.getElementById('pilotoSelect');
             seletorPilotos.innerHTML = "<option value=''>Carregando pilotos...</option>";
 
             db.ref('lista_pilotos').orderByChild('categoria').equalTo(catSelecionada).once('value')
-                .then(snapshot => {
+                .then((snapshot) => {
                     seletorPilotos.innerHTML = "";
                     const dados = snapshot.val();
                     
@@ -117,8 +117,8 @@
                         }
                     }
                 })
-                .catch(err => {
-                    console.log("Erro ao carregar pilotos: ", err);
+                .catch((err) => {
+                    console.error("Erro ao carregar pilotos", err);
                     seletorPilotos.innerHTML = "<option value=''>ERRO AO CARREGAR</option>";
                 });
         }
@@ -184,7 +184,7 @@
         }
 
         async function limparBanco() {
-            const senha = prompt("CUIDADO: Isso apagará OS TEMPOS das voltas e configurações (A lista de cadastros prévios continuará salva).\nDigite a senha para confirmar:");
+            const senha = prompt("CUIDADO: Isso apagará OS TEMPOS das voltas e configurações (Os cadastros de pilotos continuam).\nDigite a senha para confirmar:");
             if (senha === "75999862628") {
                 try {
                     await db.ref('pilotos').remove();
@@ -293,7 +293,7 @@
             }
         }
 
-        // Executa a primeira carga com segurança ao carregar o script
+        // Executa a primeira carga com segurança ao carregar a página
         carregarPilotosPorCategoria();
     </script>
 </body>
