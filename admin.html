@@ -60,7 +60,7 @@
             <hr>
             <button class="btn-nav" onclick="window.location.href='cadastro_pilotos.html'" style="background-color: #a5a5a5;">CADASTRAR PILOTOS</button>
             <button class="btn-nav" onclick="window.location.href='alteracao.html'">ALTERAR DADOS</button>
-            <button class="btn-nav" onclick="window.location.href='resultados.html'" style="background-color: #6c757d;">VER RESULTADOS</button>
+            <button class="btn-nav" onclick="window.location.href='index.html'" style="background-color: #6c757d;">VER RESULTADOS</button>
             
             <button class="btn-clear" onclick="limparBanco()">LIMPAR TODOS OS DADOS</button>
         </div>
@@ -82,8 +82,8 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // Escuta o nome da etapa
-        db.ref('configuracao/etapaAtual').on('value', (snapshot) => {
+        // Escuta o nome da etapa de forma limpa
+        db.ref('configuracao/etapaAtual').on('value', function(snapshot) {
             if(snapshot.exists()) {
                 document.getElementById('etapa').value = snapshot.val();
             }
@@ -94,14 +94,14 @@
             db.ref('configuracao').update({ etapaAtual: nome });
         }
 
-        // FUNÇÃO CORRIGIDA: Sintaxe limpa e sem travas
+        // FUNÇÃO REESCRITA COM SINTAXE TRADICIONAL COMPATÍVEL
         function carregarPilotosPorCategoria() {
             const catSelecionada = document.getElementById('categoria').value;
             const seletorPilotos = document.getElementById('pilotoSelect');
             seletorPilotos.innerHTML = "<option value=''>Carregando pilotos...</option>";
 
             db.ref('lista_pilotos').orderByChild('categoria').equalTo(catSelecionada).once('value')
-                .then((snapshot) => {
+                .then(function(snapshot) {
                     seletorPilotos.innerHTML = "";
                     const dados = snapshot.val();
                     
@@ -113,12 +113,12 @@
                     seletorPilotos.innerHTML = "<option value=''>SELECIONE O PILOTO...</option>";
                     for (let key in dados) {
                         if (dados[key] && dados[key].nome) {
-                            seletorPilotos.innerHTML += `<option value="${dados[key].nome}">${dados[key].nome}</option>`;
+                            seletorPilotos.innerHTML += "<option value='" + dados[key].nome + "'>" + dados[key].nome + "</option>";
                         }
                     }
                 })
-                .catch((err) => {
-                    console.error("Erro ao carregar pilotos", err);
+                .catch(function(err) {
+                    console.error(err);
                     seletorPilotos.innerHTML = "<option value=''>ERRO AO CARREGAR</option>";
                 });
         }
@@ -184,7 +184,7 @@
         }
 
         async function limparBanco() {
-            const senha = prompt("CUIDADO: Isso apagará OS TEMPOS das voltas e configurações (Os cadastros de pilotos continuam).\nDigite a senha para confirmar:");
+            const senha = prompt("CUIDADO: Isso apagará OS TEMPOS das voltas e configurações (Os cadastros continuam).\nDigite a senha para confirmar:");
             if (senha === "75999862628") {
                 try {
                     await db.ref('pilotos').remove();
@@ -255,25 +255,25 @@
                 doc.setFontSize(16);[cite: 2]
                 doc.setTextColor(255, 255, 255);
                 doc.setFont("helvetica", "bold");
-                doc.text(`RELATÓRIO DE PROVA - RACE KRONO`, 15, 22);
+                doc.text("RELATÓRIO DE PROVA - RACE KRONO", 15, 22);
 
                 doc.setFontSize(11);[cite: 2]
                 doc.setFont("helvetica", "normal");
-                doc.text(`Etapa: ${nomeEtapa.toUpperCase()}`, 15, 32);[cite: 2]
-                doc.text(`Gerado em: ${new Date().toLocaleString()}`, 130, 32);
+                doc.text("Etapa: " + nomeEtapa.toUpperCase(), 15, 32);[cite: 2]
+                doc.text("Gerado em: " + new Date().toLocaleString(), 130, 32);
                 
                 let y = 48;[cite: 2]
                 const cats = ["PRODUCTION", "SUPER PRODUCTION", "PROTOTIPO", "UTV", "INICIANTE"];[cite: 2]
 
-                cats.forEach(cat => {
+                cats.forEach(function(cat) {
                     let filtrados = listaPilotos.filter(p => p.categoria === cat).sort((a,b) => a.totalGeralMs - b.totalGeralMs);[cite: 2]
                     if (filtrados.length > 0) {
                         doc.setFontSize(13);[cite: 2]
                         doc.setTextColor(40, 40, 40);[cite: 2]
                         doc.setFont("helvetica", "bold");
-                        doc.text(`CATEGORIA: ${cat}`, 10, y);[cite: 2]
+                        doc.text("CATEGORIA: " + cat, 10, y);[cite: 2]
                         
-                        const rows = filtrados.map((p, i) => [`${i+1}º`, p.piloto, p.tempoE1Str, p.tempoE2Str, p.totalGeralStr]);
+                        const rows = filtrados.map((p, i) => [(i+1) + "º", p.piloto, p.tempoE1Str, p.tempoE2Str, p.totalGeralStr]);
                         
                         doc.autoTable({
                             startY: y + 4,
@@ -287,13 +287,13 @@
                     }
                 });
                 
-                doc.save(`Resultado_Acumulado_${nomeEtapa.replace(/\s+/g, '_')}.pdf`);[cite: 2]
+                doc.save("Resultado_Acumulado_" + nomeEtapa.replace(/\s+/g, '_') + ".pdf");[cite: 2]
             } catch (err) {
                 alert("Erro ao gerar PDF: " + err.message);
             }
         }
 
-        // Executa a primeira carga com segurança ao carregar a página
+        // Executa a carga inicial
         carregarPilotosPorCategoria();
     </script>
 </body>
