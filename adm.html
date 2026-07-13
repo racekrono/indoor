@@ -145,30 +145,33 @@
         });
 
         async function enviarDados() {
-            const etapa = document.getElementById('etapa').value;
+            const etapa = document.getElementById('etapa').value;[cite: 2]
             const subEtapa = document.getElementById('subEtapa').value; // 'e1' ou 'e2'
-            const categoria = document.getElementById('categoria').value;
-            const piloto = document.getElementById('piloto').value.trim().toUpperCase();
-            const tempo = document.getElementById('tempo').value;
+            const categoria = document.getElementById('categoria').value;[cite: 2]
+            const piloto = document.getElementById('piloto').value.trim().toUpperCase();[cite: 2]
+            const tempo = document.getElementById('tempo').value;[cite: 2]
 
-            if (!etapa || !piloto || tempo.length < 9) {
-                alert("Por favor, preencha todos os campos. O tempo deve ter o formato 00:00:000");
-                return;
+            if (!etapa || !piloto || tempo.length < 9) {[cite: 2]
+                alert("Por favor, preencha todos os campos. O tempo deve ter o formato 00:00:000");[cite: 2]
+                return;[cite: 2]
             }
 
-            const idPiloto = btoa(categoria + "_" + piloto).replace(/=/g, ""); 
-            const ref = db.ref('pilotos/' + idPiloto);
+            // ATUALIZAÇÃO SENSACIONAL: Atualiza qual sub-etapa está sendo transmitida para o resultados.html manter o suspense
+            db.ref('configuracao').update({ subEtapaAtiva: subEtapa });
 
-            const snapshot = await ref.once('value');
-            const pData = snapshot.val();
+            const idPiloto = btoa(categoria + "_" + piloto).replace(/=/g, "");[cite: 2]
+            const ref = db.ref('pilotos/' + idPiloto);[cite: 2]
+
+            const snapshot = await ref.once('value');[cite: 2]
+            const pData = snapshot.val();[cite: 2]
 
             const campoV1 = `${subEtapa}_v1`;
             const campoV2 = `${subEtapa}_v2`;
 
             if (!pData) {
                 let novoPiloto = {
-                    categoria: categoria,
-                    piloto: piloto,
+                    categoria: categoria,[cite: 2]
+                    piloto: piloto,[cite: 2]
                     e1_v1: "00:00:000", e1_v2: "00:00:000",
                     e2_v1: "00:00:000", e2_v2: "00:00:000"
                 };
@@ -188,7 +191,7 @@
                     alert(`Este piloto já possui as 2 voltas registradas na ${subEtapa.toUpperCase()}!`);
                 }
             }
-            document.getElementById('tempo').value = "";
+            document.getElementById('tempo').value = "";[cite: 2]
         }
 
         function limparBanco() {
@@ -223,12 +226,12 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
-            const snapshot = await db.ref('pilotos').once('value');
-            const data = snapshot.val();
-            const etapaSnap = await db.ref('configuracao/etapaAtual').once('value');
-            const nomeEtapa = etapaSnap.val() || "Geral";
+            const snapshot = await db.ref('pilotos').once('value');[cite: 2]
+            const data = snapshot.val();[cite: 2]
+            const etapaSnap = await db.ref('configuracao/etapaAtual').once('value');[cite: 2]
+            const nomeEtapa = etapaSnap.val() || "Geral";[cite: 2]
 
-            if (!data) { alert("Não há dados para exportar."); return; }
+            if (!data) { alert("Não há dados para exportar."); return; }[cite: 2]
 
             let listaPilotos = [];
             for (let k in data) {
@@ -240,8 +243,8 @@
                 const e2v2 = p.e2_v2 || "00:00:000";
 
                 // Soma individual de cada etapa
-                const totalE1Ms = tParaMs(e1v1) + tParaMs(e1v2);
-                const totalE2Ms = tParaMs(e2v1) + tParaMs(e2v2);
+                const totalE1Ms = tParaMs(e1v1) + tParaMs(e1v2);[cite: 2]
+                const totalE2Ms = tParaMs(e2v1) + tParaMs(e2v2);[cite: 2]
                 
                 // Soma total acumulada de tudo
                 const somaGeralMs = totalE1Ms + totalE2Ms;
@@ -255,29 +258,29 @@
                 });
             }
 
-            const logoUrl = "https://raw.githubusercontent.com/racekrono/adv/refs/heads/main/Logo.png";
-            const img = new Image();
-            img.src = logoUrl;
-            img.crossOrigin = "Anonymous";
+            const logoUrl = "https://raw.githubusercontent.com/racekrono/adv/refs/heads/main/Logo.png";[cite: 2]
+            const img = new Image();[cite: 2]
+            img.src = logoUrl;[cite: 2]
+            img.crossOrigin = "Anonymous";[cite: 2]
 
             img.onload = function() {
-                doc.addImage(img, 'PNG', 10, 10, 30, 30);
-                doc.setFontSize(18);
+                doc.addImage(img, 'PNG', 10, 10, 30, 30);[cite: 2]
+                doc.setFontSize(18);[cite: 2]
                 doc.text(`RELATÓRIO DE PROVA - CAMPEONATO`, 45, 22);
-                doc.setFontSize(12);
-                doc.text(`${nomeEtapa}`, 45, 30);
-                doc.setFontSize(10);
-                doc.text(`${new Date().toLocaleString()}`, 45, 36);
+                doc.setFontSize(12);[cite: 2]
+                doc.text(`${nomeEtapa}`, 45, 30);[cite: 2]
+                doc.setFontSize(10);[cite: 2]
+                doc.text(`${new Date().toLocaleString()}`, 45, 36);[cite: 2]
                 
-                let y = 50;
-                const cats = ["PRODUCTION", "SUPER PRODUCTION", "PROTOTIPO", "UTV", "INICIANTE"];
+                let y = 50;[cite: 2]
+                const cats = ["PRODUCTION", "SUPER PRODUCTION", "PROTOTIPO", "UTV", "INICIANTE"];[cite: 2]
 
                 cats.forEach(cat => {
-                    let filtrados = listaPilotos.filter(p => p.categoria === cat).sort((a,b) => a.totalGeralMs - b.totalGeralMs);
+                    let filtrados = listaPilotos.filter(p => p.categoria === cat).sort((a,b) => a.totalGeralMs - b.totalGeralMs);[cite: 2]
                     if (filtrados.length > 0) {
-                        doc.setFontSize(14);
-                        doc.setTextColor(40);
-                        doc.text(`Categoria: ${cat}`, 10, y);
+                        doc.setFontSize(14);[cite: 2]
+                        doc.setTextColor(40);[cite: 2]
+                        doc.text(`Categoria: ${cat}`, 10, y);[cite: 2]
                         
                         // Mostra Total Etapa 1 e Total Etapa 2 nas colunas do meio
                         const rows = filtrados.map((p, i) => [`${i+1}º`, p.piloto, p.tempoE1Str, p.tempoE2Str, p.totalGeralStr]);
@@ -287,13 +290,13 @@
                             head: [['Pos', 'Piloto', 'Total Etapa 01', 'Total Etapa 02', 'Total Acumulado']],
                             body: rows,
                             theme: 'grid',
-                            headStyles: { fillColor: [243, 156, 18] },
-                            styles: { fontSize: 10 }
+                            headStyles: { fillColor: [243, 156, 18] },[cite: 2]
+                            styles: { fontSize: 10 }[cite: 2]
                         });
-                        y = doc.lastAutoTable.finalY + 15;
+                        y = doc.lastAutoTable.finalY + 15;[cite: 2]
                     }
                 });
-                doc.save(`Resultado_Acumulado_${nomeEtapa}.pdf`);
+                doc.save(`Resultado_Acumulado_${nomeEtapa}.pdf`);[cite: 2]
             };
         }
     </script>
