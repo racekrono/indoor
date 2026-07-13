@@ -262,23 +262,23 @@
                     var logoUrl = "https://raw.githubusercontent.com/racekrono/adv/refs/heads/main/Logo.png";
                     var img = new Image();
                     img.src = logoUrl;
-                    img.crossOrigin = "Anonymous";[cite: 1]
+                    img.crossOrigin = "Anonymous"; //[cite: 1]
 
                     img.onload = function() {
-                        doc.addImage(img, 'PNG', 15, 12, 26, 26);[cite: 1]
+                        doc.addImage(img, 'PNG', 15, 12, 26, 26); //[cite: 1]
 
                         doc.setFontSize(18);
                         doc.setTextColor(0, 0, 0);
                         doc.setFont("helvetica", "bold");
-                        doc.text("RELATÓRIO DE PROVA - CAMPEONATO", 46, 22);[cite: 1]
+                        doc.text("RELATÓRIO DE PROVA - CAMPEONATO", 46, 22); //[cite: 1]
 
                         doc.setFontSize(12);
                         doc.setFont("helvetica", "normal");
-                        doc.text(nomeEtapa, 46, 30);[cite: 1]
+                        doc.text(nomeEtapa, 46, 30); //[cite: 1]
 
                         doc.setFontSize(10);
                         doc.setTextColor(100, 100, 100);
-                        doc.text(new Date().toLocaleString(), 46, 36);[cite: 1]
+                        doc.text(new Date().toLocaleString(), 46, 36); //[cite: 1]
                         
                         var y = 52;
                         var cats = ["PRODUCTION", "SUPER PRODUCTION", "PROTOTIPO", "UTV", "INICIANTE"];
@@ -291,7 +291,7 @@
                                 doc.setFontSize(14);
                                 doc.setTextColor(40, 40, 40);
                                 doc.setFont("helvetica", "bold");
-                                doc.text("Categoria: " + cat, 15, y);[cite: 1]
+                                doc.text("Categoria: " + cat, 15, y); //[cite: 1]
                                 
                                 var rows = filtrados.map(function(p, i) { 
                                     return [(i+1) + "º", p.piloto, p.tempoE1Str, p.tempoE2Str, p.totalGeralStr]; 
@@ -305,7 +305,7 @@
                                     headStyles: { fillColor: [243, 156, 18], textColor: [255, 255, 255], fontStyle: 'bold' },
                                     styles: { fontSize: 10, font: 'helvetica' }
                                 });
-                                y = doc.lastAutoTable.finalY + 15;[cite: 1]
+                                y = doc.lastAutoTable.finalY + 15; //[cite: 1]
                             }
                         });
                         
