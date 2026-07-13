@@ -76,7 +76,7 @@
             const subEtapa = document.getElementById('subEtapaAtual').value; // 'e1' ou 'e2'
             const numEtapaTexto = subEtapa === 'e1' ? "BATERIA 01" : "BATERIA 02";
 
-            document.getElementById('displayEtapa').innerText = `${etapaSnap.val() || ""} - ${numEtapaTexto}`;
+            document.getElementById('displayEtapa').innerText = `${etapaSnap.val() || ""} ${numEtapaTexto}`;
             document.getElementById('dataRelatorio').innerText = "Data: " + new Date().toLocaleDateString();
 
             db.ref('pilotos').once('value', snapshot => {
