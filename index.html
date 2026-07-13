@@ -30,6 +30,14 @@
         .btn-pdf:hover { background-color: #f39c12; }
         .btn-clear { background-color: #dc3545; color: white; border: none; font-size: 16px; margin-top: 10px; }
         .btn-nav { background-color: #007bff; color: white; border: none; }
+        
+        /* Destaque para o seletor de etapa ativa */
+        #subEtapa {
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+            font-weight: bold;
+            color: #856404;
+        }
     </style>
 </head>
 <body>
@@ -49,6 +57,12 @@
             
             <input type="text" id="etapa" placeholder="Nome da Etapa (ex: GP Brasil)" oninput="atualizarEtapaFirebase()">
             
+            <!-- SELETOR DE ETAPA DA PROVA -->
+            <select id="subEtapa">
+                <option value="e1">ETAPA 1 (Lançar Voltas 1 e 2)</option>
+                <option value="e2">ETAPA 2 (Lançar Voltas 1 e 2)</option>
+            </select>
+
             <select id="categoria">
                 <option value="PRODUCTION">PRODUCTION</option>
                 <option value="SUPER PRODUCTION">SUPER PRODUCTION</option>
@@ -93,25 +107,21 @@
             const senhaDigitada = document.getElementById('senhaAcesso').value;
             if (senhaDigitada === "75999862628") {
                 document.getElementById('login-overlay').style.display = 'none';
-                // Opcional: Salvar na sessão para não pedir de novo ao dar F5
                 sessionStorage.setItem('logado', 'true');
             } else {
                 alert("Senha incorreta!");
             }
         }
 
-        // Verifica se já estava logado nesta sessão
         window.onload = function() {
             if (sessionStorage.getItem('logado') === 'true') {
                 document.getElementById('login-overlay').style.display = 'none';
             }
         };
 
-        // Escuta a tecla ENTER no campo de senha
         document.getElementById('senhaAcesso').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') verificarAcesso();
         });
-        // -------------------------
 
         db.ref('configuracao/etapaAtual').on('value', (snapshot) => {
             if(snapshot.exists()) {
@@ -136,6 +146,7 @@
 
         async function enviarDados() {
             const etapa = document.getElementById('etapa').value;
+            const subEtapa = document.getElementById('subEtapa').value; // 'e1' ou 'e2'
             const categoria = document.getElementById('categoria').value;
             const piloto = document.getElementById('piloto').value.trim().toUpperCase();
             const tempo = document.getElementById('tempo').value;
@@ -151,20 +162,30 @@
             const snapshot = await ref.once('value');
             const pData = snapshot.val();
 
+            const campoV1 = `${subEtapa}_v1`;
+            const campoV2 = `${subEtapa}_v2`;
+
             if (!pData) {
-                await ref.set({
+                let novoPiloto = {
                     categoria: categoria,
                     piloto: piloto,
-                    volta1: tempo,
-                    volta2: "00:00:000"
-                });
-                alert("Volta 1 salva!");
+                    e1_v1: "00:00:000", e1_v2: "00:00:000",
+                    e2_v1: "00:00:000", e2_v2: "00:00:000"
+                };
+                novoPiloto[campoV1] = tempo;
+                await ref.set(novoPiloto);
+                alert(`Volta 1 da ${subEtapa.toUpperCase()} salva!`);
             } else {
-                if (pData.volta2 === "00:00:000") {
-                    await ref.update({ volta2: tempo });
-                    alert("Volta 2 salva!");
+                if (!pData[campoV1] || pData[campoV1] === "00:00:000") {
+                    let dados = {}; dados[campoV1] = tempo;
+                    await ref.update(dados);
+                    alert(`Volta 1 da ${subEtapa.toUpperCase()} salva!`);
+                } else if (!pData[campoV2] || pData[campoV2] === "00:00:000") {
+                    let dados = {}; dados[campoV2] = tempo;
+                    await ref.update(dados);
+                    alert(`Volta 2 da ${subEtapa.toUpperCase()} salva!`);
                 } else {
-                    alert("Este piloto já possui as 2 voltas registradas nesta categoria!");
+                    alert(`Este piloto já possui as 2 voltas registradas na ${subEtapa.toUpperCase()}!`);
                 }
             }
             document.getElementById('tempo').value = "";
@@ -189,6 +210,7 @@
             const p = t.split(':');
             return (parseInt(p[0]) * 60000) + (parseInt(p[1]) * 1000) + parseInt(p[2]);
         }
+        
         function msParaT(ms) {
             if (ms === 0) return "00:00:000";
             const min = Math.floor(ms / 60000);
@@ -211,8 +233,26 @@
             let listaPilotos = [];
             for (let k in data) {
                 const p = data[k];
-                const soma = tParaMs(p.volta1) + tParaMs(p.volta2);
-                listaPilotos.push({ ...p, totalMs: soma, totalStr: msParaT(soma) });
+                
+                const e1v1 = p.e1_v1 || "00:00:000";
+                const e1v2 = p.e1_v2 || "00:00:000";
+                const e2v1 = p.e2_v1 || "00:00:000";
+                const e2v2 = p.e2_v2 || "00:00:000";
+
+                // Soma individual de cada etapa
+                const totalE1Ms = tParaMs(e1v1) + tParaMs(e1v2);
+                const totalE2Ms = tParaMs(e2v1) + tParaMs(e2v2);
+                
+                // Soma total acumulada de tudo
+                const somaGeralMs = totalE1Ms + totalE2Ms;
+
+                listaPilotos.push({ 
+                    ...p, 
+                    tempoE1Str: msParaT(totalE1Ms),
+                    tempoE2Str: msParaT(totalE2Ms),
+                    totalGeralMs: somaGeralMs, 
+                    totalGeralStr: msParaT(somaGeralMs) 
+                });
             }
 
             const logoUrl = "https://raw.githubusercontent.com/racekrono/adv/refs/heads/main/Logo.png";
@@ -223,7 +263,7 @@
             img.onload = function() {
                 doc.addImage(img, 'PNG', 10, 10, 30, 30);
                 doc.setFontSize(18);
-                doc.text(`RELATÓRIO DE PROVA`, 45, 22);
+                doc.text(`RELATÓRIO DE PROVA - CAMPEONATO`, 45, 22);
                 doc.setFontSize(12);
                 doc.text(`${nomeEtapa}`, 45, 30);
                 doc.setFontSize(10);
@@ -233,17 +273,18 @@
                 const cats = ["PRODUCTION", "SUPER PRODUCTION", "PROTOTIPO", "UTV", "INICIANTE"];
 
                 cats.forEach(cat => {
-                    let filtrados = listaPilotos.filter(p => p.categoria === cat).sort((a,b) => a.totalMs - b.totalMs);
+                    let filtrados = listaPilotos.filter(p => p.categoria === cat).sort((a,b) => a.totalGeralMs - b.totalGeralMs);
                     if (filtrados.length > 0) {
                         doc.setFontSize(14);
                         doc.setTextColor(40);
                         doc.text(`Categoria: ${cat}`, 10, y);
                         
-                        const rows = filtrados.map((p, i) => [`${i+1}º`, p.piloto, p.volta1, p.volta2, p.totalStr]);
+                        // Mostra Total Etapa 1 e Total Etapa 2 nas colunas do meio
+                        const rows = filtrados.map((p, i) => [`${i+1}º`, p.piloto, p.tempoE1Str, p.tempoE2Str, p.totalGeralStr]);
                         
                         doc.autoTable({
                             startY: y + 5,
-                            head: [['Pos', 'Piloto', 'Volta 1', 'Volta 2', 'Total']],
+                            head: [['Pos', 'Piloto', 'Total Etapa 01', 'Total Etapa 02', 'Total Acumulado']],
                             body: rows,
                             theme: 'grid',
                             headStyles: { fillColor: [243, 156, 18] },
@@ -252,10 +293,9 @@
                         y = doc.lastAutoTable.finalY + 15;
                     }
                 });
-                doc.save(`Resultado_${nomeEtapa}.pdf`);
+                doc.save(`Resultado_Acumulado_${nomeEtapa}.pdf`);
             };
         }
     </script>
 </body>
-
 </html>
