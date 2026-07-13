@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RaceKrono</title>
+    <title>Cronometragem - Admin</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
@@ -26,51 +26,48 @@
 </head>
 <body>
 
-    <div id="conteudo-sistema">
-        <div class="card">
-            <img src="https://raw.githubusercontent.com/racekrono/adv/refs/heads/main/Logo.png" alt="Logo">
-            
-            <input type="text" id="etapa" placeholder="Nome da Etapa (ex: GP Brasil)" oninput="atualizarEtapaFirebase()">
-            
-            <!-- SELETOR DE ETAPA DA PROVA -->
-            <select id="subEtapa">
-                <option value="e1">ETAPA 1 (Lançar Voltas 1 e 2)</option>
-                <option value="e2">ETAPA 2 (Lançar Voltas 1 e 2)</option>
-            </select>
+    <div class="card">
+        <img src="https://raw.githubusercontent.com/racekrono/adv/refs/heads/main/Logo.png" alt="Logo">
+        
+        <input type="text" id="etapa" placeholder="Nome da Etapa (ex: GP Brasil)" oninput="atualizarEtapaFirebase()">
+        
+        <select id="subEtapa">
+            <option value="e1">ETAPA 1 (Lançar Voltas 1 e 2)</option>
+            <option value="e2">ETAPA 2 (Lançar Voltas 1 e 2)</option>
+        </select>
 
-            <!-- SELETOR DE CATEGORIA -->
-            <select id="categoria" onchange="carregarPilotosPorCategoria()">
-                <option value="PRODUCTION">PRODUCTION</option>
-                <option value="SUPER PRODUCTION">SUPER PRODUCTION</option>
-                <option value="PROTOTIPO">PROTOTIPO</option>
-                <option value="UTV">UTV</option>
-                <option value="INICIANTE">INICIANTE</option>
-            </select>
+        <select id="categoria" onchange="carregarPilotosPorCategoria()">
+            <option value="PRODUCTION">PRODUCTION</option>
+            <option value="SUPER PRODUCTION">SUPER PRODUCTION</option>
+            <option value="PROTOTIPO">PROTOTIPO</option>
+            <option value="UTV">UTV</option>
+            <option value="INICIANTE">INICIANTE</option>
+        </select>
 
-            <!-- SELETOR DINÂMICO DE PILOTOS -->
-            <select id="pilotoSelect">
-                <option value="">Carregando pilotos...</option>
-            </select>
-            
-            <input type="text" id="tempo" placeholder="00:00:000" maxlength="9">
+        <select id="pilotoSelect">
+            <option value="">Carregando pilotos...</option>
+        </select>
+        
+        <input type="text" id="tempo" placeholder="00:00:000" maxlength="9">
 
-            <button class="btn-save" onclick="enviarDados()">SALVAR VOLTA</button>
-            <button class="btn-pdf" onclick="exportarPDF()">RELATÓRIO DE PROVA</button>
-            
-            <hr>
-            <button class="btn-nav" onclick="window.location.href='cadastro_pilotos.html'" style="background-color: #a5a5a5;">CADASTRAR PILOTOS</button>
-            <button class="btn-nav" onclick="window.location.href='alteracao.html'">ALTERAR DADOS</button>
-            <button class="btn-nav" onclick="window.location.href='index.html'" style="background-color: #6c757d;">VER RESULTADOS</button>
-            
-            <button class="btn-clear" onclick="limparBanco()">LIMPAR TODOS OS DADOS</button>
-        </div>
+        <button class="btn-save" onclick="enviarDados()">SALVAR VOLTA</button>
+        <button class="btn-pdf" onclick="exportarPDF()">RELATÓRIO DE PROVA</button>
+        
+        <hr>
+        <button class="btn-nav" onclick="window.location.href='cadastro_pilotos.html'" style="background-color: #a5a5a5;">CADASTRAR PILOTOS</button>
+        <button class="btn-nav" onclick="window.location.href='alteracao.html'">ALTERAR DADOS</button>
+        <button class="btn-nav" onclick="window.location.href='index.html'" style="background-color: #6c757d;">VER RESULTADOS</button>
+        
+        <button class="btn-clear" onclick="limparBanco()">LIMPAR TODOS OS DADOS</button>
     </div>
 
+    <!-- Scripts do Firebase compatíveis -->
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
 
     <script>
-        const firebaseConfig = {
+        // Configuração do seu Firebase
+        var firebaseConfig = {
             apiKey: "AIzaSyC4ajZM_W0_qGOlrlRoPn6DUsUBUm4qAcc",
             authDomain: "crono-rrb.firebaseapp.com",
             databaseURL: "https://crono-rrb-default-rtdb.firebaseio.com",
@@ -79,10 +76,11 @@
             messagingSenderId: "1472207720",
             appId: "1:1472207720:web:11502aed4117b1fda714dd"
         };
+        
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+        var db = firebase.database();
 
-        // Escuta o nome da etapa de forma limpa
+        // Monitorar nome da etapa
         db.ref('configuracao/etapaAtual').on('value', function(snapshot) {
             if(snapshot.exists()) {
                 document.getElementById('etapa').value = snapshot.val();
@@ -90,20 +88,20 @@
         });
 
         function atualizarEtapaFirebase() {
-            const nome = document.getElementById('etapa').value;
+            var nome = document.getElementById('etapa').value;
             db.ref('configuracao').update({ etapaAtual: nome });
         }
 
-        // FUNÇÃO REESCRITA COM SINTAXE TRADICIONAL COMPATÍVEL
+        // Carrega os pilotos da categoria selecionada
         function carregarPilotosPorCategoria() {
-            const catSelecionada = document.getElementById('categoria').value;
-            const seletorPilotos = document.getElementById('pilotoSelect');
+            var catSelecionada = document.getElementById('categoria').value;
+            var seletorPilotos = document.getElementById('pilotoSelect');
             seletorPilotos.innerHTML = "<option value=''>Carregando pilotos...</option>";
 
             db.ref('lista_pilotos').orderByChild('categoria').equalTo(catSelecionada).once('value')
                 .then(function(snapshot) {
                     seletorPilotos.innerHTML = "";
-                    const dados = snapshot.val();
+                    var dados = snapshot.val();
                     
                     if (!dados) {
                         seletorPilotos.innerHTML = "<option value=''>NENHUM PILOTO CADASTRADO</option>";
@@ -111,7 +109,7 @@
                     }
 
                     seletorPilotos.innerHTML = "<option value=''>SELECIONE O PILOTO...</option>";
-                    for (let key in dados) {
+                    for (var key in dados) {
                         if (dados[key] && dados[key].nome) {
                             seletorPilotos.innerHTML += "<option value='" + dados[key].nome + "'>" + dados[key].nome + "</option>";
                         }
@@ -123,9 +121,9 @@
                 });
         }
 
-        // Máscara de tempo
+        // Máscara de tempo (00:00:000)
         document.getElementById('tempo').addEventListener('input', function (e) {
-            let v = e.target.value.replace(/\D/g, '');
+            var v = e.target.value.replace(/\D/g, '');
             if (v.length > 4) {
                 v = v.replace(/(\d{2})(\d{2})(\d{3})/, "$1:$2:$3");
             } else if (v.length > 2) {
@@ -134,166 +132,180 @@
             e.target.value = v;
         });
 
-        async function enviarDados() {
-            const etapa = document.getElementById('etapa').value;[cite: 2]
-            const subEtapa = document.getElementById('subEtapa').value; 
-            const categoria = document.getElementById('categoria').value;[cite: 2]
-            const piloto = document.getElementById('pilotoSelect').value; 
-            const tempo = document.getElementById('tempo').value;[cite: 2]
+        // Salvar os tempos das voltas
+        function enviarDados() {
+            var etapa = document.getElementById('etapa').value;
+            var subEtapa = document.getElementById('subEtapa').value; 
+            var categoria = document.getElementById('categoria').value;
+            var piloto = document.getElementById('pilotoSelect').value; 
+            var tempo = document.getElementById('tempo').value;
 
-            if (!etapa || !piloto || piloto === "SELECIONE O PILOTO..." || piloto === "NENHUM PILOTO CADASTRADO" || tempo.length < 9) {[cite: 2]
-                alert("Por favor, selecione um piloto válido e preencha o tempo corretamente (00:00:000).");
+            if (!etapa || !piloto || piloto === "" || piloto === "SELECIONE O PILOTO..." || tempo.length < 9) {
+                alert("Selecione um piloto válido e preencha o tempo corretamente.");
                 return;
             }
 
             db.ref('configuracao').update({ subEtapaAtiva: subEtapa });
 
-            const idPiloto = btoa(categoria + "_" + piloto).replace(/=/g, "");[cite: 2]
-            const ref = db.ref('pilotos/' + idPiloto);[cite: 2]
+            var idPiloto = btoa(categoria + "_" + piloto).replace(/=/g, "");
+            var ref = db.ref('pilotos/' + idPiloto);
 
-            const snapshot = await ref.once('value');[cite: 2]
-            const pData = snapshot.val();[cite: 2]
+            ref.once('value').then(function(snapshot) {
+                var pData = snapshot.val();
+                var campoV1 = subEtapa + "_v1";
+                var campoV2 = subEtapa + "_v2";
 
-            const campoV1 = `${subEtapa}_v1`;
-            const campoV2 = `${subEtapa}_v2`;
-
-            if (!pData) {
-                let novoPiloto = {
-                    categoria: categoria,[cite: 2]
-                    piloto: piloto,[cite: 2]
-                    e1_v1: "00:00:000", e1_v2: "00:00:000",
-                    e2_v1: "00:00:000", e2_v2: "00:00:000"
-                };
-                novoPiloto[campoV1] = tempo;
-                await ref.set(novoPiloto);
-                alert(`Volta 1 da ${subEtapa.toUpperCase()} salva para ${piloto}!`);
-            } else {
-                if (!pData[campoV1] || pData[campoV1] === "00:00:000") {
-                    let dados = {}; dados[campoV1] = tempo;
-                    await ref.update(dados);
-                    alert(`Volta 1 da ${subEtapa.toUpperCase()} salva para ${piloto}!`);
-                } else if (!pData[campoV2] || pData[campoV2] === "00:00:000") {
-                    let dados = {}; dados[campoV2] = tempo;
-                    await ref.update(dados);
-                    alert(`Volta 2 da ${subEtapa.toUpperCase()} salva para ${piloto}!`);
+                if (!pData) {
+                    var novoPiloto = {
+                        categoria: categoria,
+                        piloto: piloto,
+                        e1_v1: "00:00:000", e1_v2: "00:00:000",
+                        e2_v1: "00:00:000", e2_v2: "00:00:000"
+                    };
+                    novoPiloto[campoV1] = tempo;
+                    return ref.set(novoPiloto).then(function() {
+                        alert("Volta 1 da " + subEtapa.toUpperCase() + " salva para " + piloto + "!");
+                    });
                 } else {
-                    alert(`Este piloto já possui as 2 voltas registradas na ${subEtapa.toUpperCase()}!`);
+                    var dados = {};
+                    if (!pData[campoV1] || pData[campoV1] === "00:00:000") {
+                        dados[campoV1] = tempo;
+                        return ref.update(dados).then(function() {
+                            alert("Volta 1 da " + subEtapa.toUpperCase() + " salva para " + piloto + "!");
+                        });
+                    } else if (!pData[campoV2] || pData[campoV2] === "00:00:000") {
+                        dados[campoV2] = tempo;
+                        return ref.update(dados).then(function() {
+                            alert("Volta 2 da " + subEtapa.toUpperCase() + " salva para " + piloto + "!");
+                        });
+                    } else {
+                        alert("Este piloto já possui as 2 voltas registradas nesta etapa!");
+                    }
                 }
-            }
-            document.getElementById('tempo').value = "";[cite: 2]
+            }).then(function() {
+                document.getElementById('tempo').value = "";
+            }).catch(function(err) {
+                alert("Erro ao salvar: " + err.message);
+            });
         }
 
-        async function limparBanco() {
-            const senha = prompt("CUIDADO: Isso apagará OS TEMPOS das voltas e configurações (Os cadastros continuam).\nDigite a senha para confirmar:");
+        // Limpar os tempos das voltas
+        function limparBanco() {
+            var senha = prompt("CUIDADO: Isso apagará OS TEMPOS das voltas.\nDigite a senha para confirmar:");
             if (senha === "75999862628") {
-                try {
-                    await db.ref('pilotos').remove();
-                    await db.ref('configuracao').remove();
-                    alert("Os tempos do banco foram resetados com sucesso!");
-                    window.location.reload();
-                } catch (error) {
-                    alert("Erro ao tentar limpar o banco: " + error.message);
-                }
+                db.ref('pilotos').remove()
+                    .then(function() {
+                        return db.ref('configuracao').remove();
+                    })
+                    .then(function() {
+                        alert("Os tempos foram resetados com sucesso!");
+                        window.location.reload();
+                    })
+                    .catch(function(error) {
+                        alert("Erro ao limpar banco: " + error.message);
+                    });
             } else if (senha !== null) {
                 alert("Senha incorreta!");
             }
         }
 
+        // Conversões de tempo
         function tParaMs(t) {
             if (!t || t === "00:00:000") return 0;
-            const p = t.split(':');
+            var p = t.split(':');
             return (parseInt(p[0]) * 60000) + (parseInt(p[1]) * 1000) + parseInt(p[2]);
         }
         
         function msParaT(ms) {
             if (ms === 0) return "00:00:000";
-            const min = Math.floor(ms / 60000);
-            const seg = Math.floor((ms % 60000) / 1000);
-            const mil = ms % 1000;
-            return `${String(min).padStart(2,'0')}:${String(seg).padStart(2,'0')}:${String(mil).padStart(3,'0')}`;
+            var min = Math.floor(ms / 60000);
+            var seg = Math.floor((ms % 60000) / 1000);
+            var mil = ms % 1000;
+            return (min < 10 ? "0" : "") + min + ":" + (seg < 10 ? "0" : "") + seg + ":" + (mil < 100 ? (mil < 10 ? "00" : "0") : "") + mil;
         }
 
-        async function exportarPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+        // Exportação do PDF
+        function exportarPDF() {
+            var { jsPDF } = window.jspdf;
+            var doc = new jsPDF();
             
-            try {
-                const snapshot = await db.ref('pilotos').once('value');[cite: 2]
-                const data = snapshot.val();[cite: 2]
-                const etapaSnap = await db.ref('configuracao/etapaAtual').once('value');[cite: 2]
-                const nomeEtapa = etapaSnap.val() || "Geral";[cite: 2]
+            db.ref('pilotos').once('value').then(function(snapshot) {
+                var data = snapshot.val();
+                return db.ref('configuracao/etapaAtual').once('value').then(function(etapaSnap) {
+                    var nomeEtapa = etapaSnap.val() || "Geral";
 
-                if (!data) { 
-                    alert("Não há dados de tempos registrados para exportar."); 
-                    return; 
-                }
-
-                let listaPilotos = [];
-                for (let k in data) {
-                    const p = data[k];
-                    const e1v1 = p.e1_v1 || "00:00:000";
-                    const e1v2 = p.e1_v2 || "00:00:000";
-                    const e2v1 = p.e2_v1 || "00:00:000";
-                    const e2v2 = p.e2_v2 || "00:00:000";
-
-                    const totalE1Ms = tParaMs(e1v1) + tParaMs(e1v2);[cite: 2]
-                    const totalE2Ms = tParaMs(e2v1) + tParaMs(e2v2);[cite: 2]
-                    const somaGeralMs = totalE1Ms + totalE2Ms;
-
-                    listaPilotos.push({ 
-                        ...p, 
-                        tempoE1Str: msParaT(totalE1Ms),
-                        tempoE2Str: msParaT(totalE2Ms),
-                        totalGeralMs: somaGeralMs, 
-                        totalGeralStr: msParaT(somaGeralMs) 
-                    });
-                }
-
-                doc.setFillColor(40, 44, 52);
-                doc.rect(10, 10, 190, 28, 'F');
-
-                doc.setFontSize(16);[cite: 2]
-                doc.setTextColor(255, 255, 255);
-                doc.setFont("helvetica", "bold");
-                doc.text("RELATÓRIO DE PROVA - RACE KRONO", 15, 22);
-
-                doc.setFontSize(11);[cite: 2]
-                doc.setFont("helvetica", "normal");
-                doc.text("Etapa: " + nomeEtapa.toUpperCase(), 15, 32);[cite: 2]
-                doc.text("Gerado em: " + new Date().toLocaleString(), 130, 32);
-                
-                let y = 48;[cite: 2]
-                const cats = ["PRODUCTION", "SUPER PRODUCTION", "PROTOTIPO", "UTV", "INICIANTE"];[cite: 2]
-
-                cats.forEach(function(cat) {
-                    let filtrados = listaPilotos.filter(p => p.categoria === cat).sort((a,b) => a.totalGeralMs - b.totalGeralMs);[cite: 2]
-                    if (filtrados.length > 0) {
-                        doc.setFontSize(13);[cite: 2]
-                        doc.setTextColor(40, 40, 40);[cite: 2]
-                        doc.setFont("helvetica", "bold");
-                        doc.text("CATEGORIA: " + cat, 10, y);[cite: 2]
-                        
-                        const rows = filtrados.map((p, i) => [(i+1) + "º", p.piloto, p.tempoE1Str, p.tempoE2Str, p.totalGeralStr]);
-                        
-                        doc.autoTable({
-                            startY: y + 4,
-                            head: [['Pos', 'Piloto', 'Total Etapa 01', 'Total Etapa 02', 'Total Acumulado']],
-                            body: rows,
-                            theme: 'grid',
-                            headStyles: { fillColor: [243, 156, 18], textColor: [255, 255, 255], fontStyle: 'bold' },[cite: 2]
-                            styles: { fontSize: 10, font: 'helvetica' }[cite: 2]
-                        });
-                        y = doc.lastAutoTable.finalY + 14;[cite: 2]
+                    if (!data) { 
+                        alert("Não há dados de tempos registrados para exportar."); 
+                        return; 
                     }
+
+                    var listaPilotos = [];
+                    for (var k in data) {
+                        var p = data[k];
+                        var e1v1 = p.e1_v1 || "00:00:000";
+                        var e1v2 = p.e1_v2 || "00:00:000";
+                        var e2v1 = p.e2_v1 || "00:00:000";
+                        var e2v2 = p.e2_v2 || "00:00:000";
+
+                        var totalE1Ms = tParaMs(e1v1) + tParaMs(e1v2);
+                        var totalE2Ms = tParaMs(e2v1) + tParaMs(e2v2);
+                        var somaGeralMs = totalE1Ms + totalE2Ms;
+
+                        p.tempoE1Str = msParaT(totalE1Ms);
+                        p.tempoE2Str = msParaT(totalE2Ms);
+                        p.totalGeralMs = somaGeralMs;
+                        p.totalGeralStr = msParaT(somaGeralMs);
+
+                        listaPilotos.push(p);
+                    }
+
+                    doc.setFillColor(40, 44, 52);
+                    doc.rect(10, 10, 190, 28, 'F');
+
+                    doc.setFontSize(16);
+                    doc.setTextColor(255, 255, 255);
+                    doc.text("RELATÓRIO DE PROVA - RACE KRONO", 15, 22);
+
+                    doc.setFontSize(11);
+                    doc.text("Etapa: " + nomeEtapa.toUpperCase(), 15, 32);
+                    doc.text("Gerado em: " + new Date().toLocaleString(), 130, 32);
+                    
+                    var y = 48;
+                    var cats = ["PRODUCTION", "SUPER PRODUCTION", "PROTOTIPO", "UTV", "INICIANTE"];
+
+                    cats.forEach(function(cat) {
+                        var filtrados = listaPilotos.filter(function(p) { return p.categoria === cat; });
+                        filtrados.sort(function(a, b) { return a.totalGeralMs - b.totalGeralMs; });
+                        
+                        if (filtrados.length > 0) {
+                            doc.setFontSize(13);
+                            doc.setTextColor(40, 40, 40);
+                            doc.text("CATEGORIA: " + cat, 10, y);
+                            
+                            var rows = filtrados.map(function(p, i) { 
+                                return [(i+1) + "º", p.piloto, p.tempoE1Str, p.tempoE2Str, p.totalGeralStr]; 
+                            });
+                            
+                            doc.autoTable({
+                                startY: y + 4,
+                                head: [['Pos', 'Piloto', 'Total Etapa 01', 'Total Etapa 02', 'Total Acumulado']],
+                                body: rows,
+                                theme: 'grid',
+                                headStyles: { fillColor: [243, 156, 18], textColor: [255, 255, 255] },
+                                styles: { fontSize: 10 }
+                            });
+                            y = doc.lastAutoTable.finalY + 14;
+                        }
+                    });
+                    
+                    doc.save("Resultado_Acumulado_" + nomeEtapa.replace(/\s+/g, '_') + ".pdf");
                 });
-                
-                doc.save("Resultado_Acumulado_" + nomeEtapa.replace(/\s+/g, '_') + ".pdf");[cite: 2]
-            } catch (err) {
+            }).catch(function(err) {
                 alert("Erro ao gerar PDF: " + err.message);
-            }
+            });
         }
 
-        // Executa a carga inicial
+        // Executar carga inicial ao abrir a página
         carregarPilotosPorCategoria();
     </script>
 </body>
