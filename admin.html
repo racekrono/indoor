@@ -60,7 +60,7 @@
             
             <hr>
             <button class="btn-nav" onclick="window.location.href='alteracao.html'">ALTERAR DADOS</button>
-            <button class="btn-nav" onclick="window.location.href='index.html'" style="background-color: #6c757d;">VER RESULTADOS</button>
+            <button class="btn-nav" onclick="window.location.href='resultados.html'" style="background-color: #6c757d;">VER RESULTADOS</button>
             
             <button class="btn-clear" onclick="limparBanco()">LIMPAR TODOS OS DADOS</button>
         </div>
@@ -152,15 +152,19 @@
             document.getElementById('tempo').value = "";[cite: 2]
         }
 
-        function limparBanco() {
+        async function limparBanco() {
             const senha = prompt("CUIDADO: Isso apagará PILOTOS e CONFIGURAÇÕES.\nDigite a senha para confirmar:");
+            
             if (senha === "75999862628") {
-                db.ref('/').remove()
-                    .then(() => {
-                        alert("Todos os dados do banco foram resetados!");
-                        window.location.reload();
-                    })
-                    .catch((e) => alert("Erro ao apagar: " + e));
+                try {
+                    await db.ref('pilotos').remove();
+                    await db.ref('configuracao').remove();
+                    
+                    alert("Todos os dados do banco foram resetados com sucesso!");
+                    window.location.reload();
+                } catch (error) {
+                    alert("Erro ao tentar limpar o banco: " + error.message);
+                }
             } else if (senha !== null) {
                 alert("Senha incorreta!");
             }
@@ -180,6 +184,7 @@
             return `${String(min).padStart(2,'0')}:${String(seg).padStart(2,'0')}:${String(mil).padStart(3,'0')}`;
         }
 
+        // FUNÇÃO CORRIGIDA: Geração nativa sem carregamento de imagens externas para evitar erros de CORS
         async function exportarPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -189,7 +194,10 @@
             const etapaSnap = await db.ref('configuracao/etapaAtual').once('value');[cite: 2]
             const nomeEtapa = etapaSnap.val() || "Geral";[cite: 2]
 
-            if (!data) { alert("Não há dados para exportar."); return; }[cite: 2]
+            if (!data) { 
+                alert("Não há dados de pilotos salvos para exportar."); 
+                return; 
+            }
 
             let listaPilotos = [];
             for (let k in data) {
@@ -214,45 +222,46 @@
                 });
             }
 
-            const logoUrl = "https://raw.githubusercontent.com/racekrono/adv/refs/heads/main/Logo.png";[cite: 2]
-            const img = new Image();[cite: 2]
-            img.src = logoUrl;[cite: 2]
-            img.crossOrigin = "Anonymous";[cite: 2]
+            // Desenha um cabeçalho estilizado nativo (sem depender de URL externa)
+            doc.setFillColor(40, 44, 52); // Cinza Escuro Premium
+            doc.rect(10, 10, 190, 28, 'F');
 
-            img.onload = function() {
-                doc.addImage(img, 'PNG', 10, 10, 30, 30);[cite: 2]
-                doc.setFontSize(18);[cite: 2]
-                doc.text(`RELATÓRIO DE PROVA - CAMPEONATO`, 45, 22);
-                doc.setFontSize(12);[cite: 2]
-                doc.text(`${nomeEtapa}`, 45, 30);[cite: 2]
-                doc.setFontSize(10);[cite: 2]
-                doc.text(`${new Date().toLocaleString()}`, 45, 36);[cite: 2]
-                
-                let y = 50;[cite: 2]
-                const cats = ["PRODUCTION", "SUPER PRODUCTION", "PROTOTIPO", "UTV", "INICIANTE"];[cite: 2]
+            doc.setFontSize(16);[cite: 2]
+            doc.setTextColor(255, 255, 255); // Texto Branco
+            doc.setFont("helvetica", "bold");
+            doc.text(`RELATÓRIO DE PROVA - RACE KRONO`, 15, 22);
 
-                cats.forEach(cat => {
-                    let filtrados = listaPilotos.filter(p => p.categoria === cat).sort((a,b) => a.totalGeralMs - b.totalGeralMs);[cite: 2]
-                    if (filtrados.length > 0) {
-                        doc.setFontSize(14);[cite: 2]
-                        doc.setTextColor(40);[cite: 2]
-                        doc.text(`Categoria: ${cat}`, 10, y);[cite: 2]
-                        
-                        const rows = filtrados.map((p, i) => [`${i+1}º`, p.piloto, p.tempoE1Str, p.tempoE2Str, p.totalGeralStr]);
-                        
-                        doc.autoTable({
-                            startY: y + 5,
-                            head: [['Pos', 'Piloto', 'Total Etapa 01', 'Total Etapa 02', 'Total Acumulado']],
-                            body: rows,
-                            theme: 'grid',
-                            headStyles: { fillColor: [243, 156, 18] },[cite: 2]
-                            styles: { fontSize: 10 }[cite: 2]
-                        });
-                        y = doc.lastAutoTable.finalY + 15;[cite: 2]
-                    }
-                });
-                doc.save(`Resultado_Acumulado_${nomeEtapa}.pdf`);[cite: 2]
-            };
+            doc.setFontSize(11);[cite: 2]
+            doc.setFont("helvetica", "normal");
+            doc.text(`Etapa: ${nomeEtapa.toUpperCase()}`, 15, 32);[cite: 2]
+            doc.text(`Gerado em: ${new Date().toLocaleString()}`, 130, 32);
+            
+            let y = 48;[cite: 2]
+            const cats = ["PRODUCTION", "SUPER PRODUCTION", "PROTOTIPO", "UTV", "INICIANTE"];[cite: 2]
+
+            cats.forEach(cat => {
+                let filtrados = listaPilotos.filter(p => p.categoria === cat).sort((a,b) => a.totalGeralMs - b.totalGeralMs);[cite: 2]
+                if (filtrados.length > 0) {
+                    doc.setFontSize(13);[cite: 2]
+                    doc.setTextColor(40, 40, 40);[cite: 2]
+                    doc.setFont("helvetica", "bold");
+                    doc.text(`CATEGORIA: ${cat}`, 10, y);[cite: 2]
+                    
+                    const rows = filtrados.map((p, i) => [`${i+1}º`, p.piloto, p.tempoE1Str, p.tempoE2Str, p.totalGeralStr]);
+                    
+                    doc.autoTable({
+                        startY: y + 4,
+                        head: [['Pos', 'Piloto', 'Total Etapa 01', 'Total Etapa 02', 'Total Acumulado']],
+                        body: rows,
+                        theme: 'grid',
+                        headStyles: { fillColor: [243, 156, 18], textColor: [255, 255, 255], fontStyle: 'bold' },[cite: 2]
+                        styles: { fontSize: 10, font: 'helvetica' }[cite: 2]
+                    });
+                    y = doc.lastAutoTable.finalY + 14;[cite: 2]
+                }
+            });
+            
+            doc.save(`Resultado_Acumulado_${nomeEtapa.replace(/\s+/g, '_')}.pdf`);[cite: 2]
         }
     </script>
 </body>
