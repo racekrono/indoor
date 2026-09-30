@@ -7,19 +7,68 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; text-align: center; background-color: #f0f2f5; padding: 20px; }
-        .card { max-width: 450px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; background-color: #f0f2f5; padding: 20px; margin: 0; }
+        .card { max-width: 450px; margin: 20px auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; }
         img { width: 180px; margin-bottom: 10px; }
         input, select, button { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
         button { cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-save { background-color: #28a745; color: white; border: none; }
+        
+        .btn-save { background-color: #28a745; color: white; border: none; font-size: 18px; padding: 14px; margin-top: 15px; }
         .btn-save:hover { background-color: #218838; }
-        .btn-pdf { background-color: #e67e22; color: white; border: none; margin-top: 10px; }
+
+        /* Estilos do Menu Sanduíche */
+        .menu-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: #333;
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1000;
+            border: none;
+            padding: 0;
+            margin: 0;
+            line-height: 1;
+        }
+
+        .menu-dropdown {
+            display: none;
+            position: absolute;
+            top: 65px;
+            right: 20px;
+            width: 250px;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border-radius: 10px;
+            padding: 10px;
+            z-index: 999;
+            text-align: left;
+        }
+
+        .menu-dropdown.active {
+            display: block;
+        }
+
+        .menu-dropdown button {
+            margin: 5px 0;
+            font-size: 14px;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .btn-pdf { background-color: #e67e22; color: white; border: none; }
         .btn-pdf:hover { background-color: #f39c12; }
-        .btn-clear { background-color: #dc3545; color: white; border: none; font-size: 16px; margin-top: 10px; }
+        .btn-clear { background-color: #dc3545; color: white; border: none; }
         .btn-clear:hover { background-color: #bd2130; }
         .btn-nav { background-color: #007bff; color: white; border: none; }
-        
+
         #subEtapa { background-color: #fff3cd; border: 2px solid #ffc107; font-weight: bold; color: #856404; }
         .piloto-select { background-color: #e2f0d9; border: 2px solid #385723; font-weight: bold; }
         .bloco-piloto { background-color: #f8f9fa; border: 1px solid #e0e0e0; padding: 10px; border-radius: 10px; margin-bottom: 10px; }
@@ -29,6 +78,19 @@
 <body>
 
     <div class="card">
+        <!-- Botão Menu Sanduíche -->
+        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+
+        <!-- Dropdown de Navegação -->
+        <div class="menu-dropdown" id="menuDropdown">
+            <button class="btn-pdf" onclick="exportarPDF()">📄 RELATÓRIO DE PROVA</button>
+            <button class="btn-nav" onclick="window.location.href='cadastro_pilotos.html'" style="background-color: #a5a5a5;">➕ CADASTRAR PILOTOS</button>
+            <button class="btn-nav" onclick="window.location.href='alteracao.html'">✏️ ALTERAR DADOS</button>
+            <button class="btn-nav" onclick="window.location.href='index.html'" style="background-color: #6c757d;">📊 VER RESULTADOS</button>
+            <hr style="margin: 8px 0; border: 0; border-top: 1px solid #eee;">
+            <button class="btn-clear" onclick="limparBanco()">🗑️ LIMPAR TODOS OS TEMPOS</button>
+        </div>
+
         <img src="https://raw.githubusercontent.com/racekrono/adv/refs/heads/main/Logo.png" alt="Logo">
         
         <input type="text" id="etapa" placeholder="Nome da Etapa (ex: GP Brasil)" oninput="atualizarEtapaFirebase()">
@@ -64,15 +126,8 @@
             <input type="text" id="tempo2" class="campo-tempo" placeholder="00:00:000" maxlength="9">
         </div>
 
+        <!-- Único botão principal mantido fora do menu -->
         <button class="btn-save" onclick="enviarDados()">SALVAR VOLTAS</button>
-        <button class="btn-pdf" onclick="exportarPDF()">RELATÓRIO DE PROVA</button>
-        
-        <hr>
-        <button class="btn-nav" onclick="window.location.href='cadastro_pilotos.html'" style="background-color: #a5a5a5;">CADASTRAR PILOTOS</button>
-        <button class="btn-nav" onclick="window.location.href='alteracao.html'">ALTERAR DADOS</button>
-        <button class="btn-nav" onclick="window.location.href='index.html'" style="background-color: #6c757d;">VER RESULTADOS</button>
-        
-        <button class="btn-clear" onclick="limparBanco()">LIMPAR TODOS OS TEMPOS</button>
     </div>
 
     <!-- Scripts do Firebase compatíveis -->
@@ -92,6 +147,21 @@
         
         firebase.initializeApp(firebaseConfig);
         var db = firebase.database();
+
+        // Toggle do Menu Sanduíche
+        function toggleMenu() {
+            var dropdown = document.getElementById('menuDropdown');
+            dropdown.classList.toggle('active');
+        }
+
+        // Fechar menu ao clicar fora dele
+        document.addEventListener('click', function(event) {
+            var dropdown = document.getElementById('menuDropdown');
+            var btn = document.querySelector('.menu-btn');
+            if (dropdown && btn && !dropdown.contains(event.target) && !btn.contains(event.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
 
         db.ref('configuracao/etapaAtual').on('value', function(snapshot) {
             if(snapshot.exists()) {
@@ -138,7 +208,7 @@
                 });
         }
 
-        // Aplicar máscara aos campos de tempo
+        // Máscara dos campos de tempo
         document.querySelectorAll('.campo-tempo').forEach(function(el) {
             el.addEventListener('input', function (e) {
                 var v = e.target.value.replace(/\D/g, '');
@@ -151,11 +221,10 @@
             });
         });
 
-        // Função auxiliar para salvar a volta de um piloto individualmente
         function salvarVoltaUnica(etapa, subEtapa, categoria, piloto, tempo) {
             return new Promise(function(resolve, reject) {
                 if (!piloto || piloto === "" || piloto === "SELECIONE O PILOTO..." || tempo.length < 9) {
-                    resolve(null); // Ignora se o campo estiver vazio ou incompleto
+                    resolve(null);
                     return;
                 }
 
@@ -198,7 +267,6 @@
             });
         }
 
-        // Salvar dados de ambos os pilotos selecionados
         function enviarDados() {
             var etapa = document.getElementById('etapa').value;
             var subEtapa = document.getElementById('subEtapa').value; 
@@ -306,22 +374,22 @@
                     var logoUrl = "https://raw.githubusercontent.com/racekrono/adv/refs/heads/main/Logo.png";
                     var img = new Image();
                     img.src = logoUrl;
-                    img.crossOrigin = "Anonymous"; //
+                    img.crossOrigin = "Anonymous";
 
                     img.onload = function() {
-                        doc.addImage(img, 'PNG', 15, 12, 26, 26); //
+                        doc.addImage(img, 'PNG', 15, 12, 26, 26);
                         doc.setFontSize(18);
                         doc.setTextColor(0, 0, 0);
                         doc.setFont("helvetica", "bold");
-                        doc.text("RELATÓRIO DE PROVA", 46, 18); //
+                        doc.text("RELATÓRIO DE PROVA", 46, 18);
                         doc.setFontSize(12);
-                        doc.text("CAMPEONATO BAIANO DE RALLY INDOOR 4X4", 46, 25); //    
+                        doc.text("CAMPEONATO BAIANO DE RALLY INDOOR 4X4", 46, 25);
                         doc.setFontSize(12);
                         doc.setFont("helvetica", "normal");
-                        doc.text(nomeEtapa, 46, 30); //
+                        doc.text(nomeEtapa, 46, 30);
                         doc.setFontSize(10);
                         doc.setTextColor(100, 100, 100);
-                        doc.text(new Date().toLocaleString(), 46, 36); //
+                        doc.text(new Date().toLocaleString(), 46, 36);
                         
                         var y = 52;
                         var cats = ["PRODUCTION", "SUPER PRODUCTION", "PROTOTIPO", "UTV", "INICIANTE"];
@@ -334,7 +402,7 @@
                                 doc.setFontSize(14);
                                 doc.setTextColor(40, 40, 40);
                                 doc.setFont("helvetica", "bold");
-                                doc.text("Categoria: " + cat, 15, y); //
+                                doc.text("Categoria: " + cat, 15, y);
                                 
                                 var rows = filtrados.map(function(p, i) { 
                                     return [(i+1) + "º", p.piloto, p.tempoE1Str, p.tempoE2Str, p.totalGeralStr]; 
@@ -348,7 +416,7 @@
                                     headStyles: { fillColor: [243, 156, 18], textColor: [255, 255, 255], fontStyle: 'bold' },
                                     styles: { fontSize: 10, font: 'helvetica' }
                                 });
-                                y = doc.lastAutoTable.finalY + 15; //
+                                y = doc.lastAutoTable.finalY + 15;
                             }
                         });
                         
