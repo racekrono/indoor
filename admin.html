@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; background-color: #f0f2f5; padding: 20px; }
+        .card { max-width: 450px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        img { width: 180px; margin-bottom: 10px; }
+        input, select, button { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        button { cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-save { background-color: #28a745; color: white; border: none; }
+        .btn-save:hover { background-color: #218838; }
+        .btn-pdf { background-color: #e67e22; color: white; border: none; margin-top: 10px; }
+        .btn-pdf:hover { background-color: #f39c12; }
+        .btn-clear { background-color: #dc3545; color: white; border: none; font-size: 16px; margin-top: 10px; }
+        .btn-clear:hover { background-color: #bd2130; }
+        .btn-nav { background-color: #007bff; color: white; border: none; }
+        
+        #subEtapa { background-color: #fff3cd; border: 2px solid #ffc107; font-weight: bold; color: #856404; }
+        .piloto-select { background-color: #e2f0d9; border: 2px solid #385723; font-weight: bold; }
+        .bloco-piloto { background-color: #f8f9fa; border: 1px solid #e0e0e0; padding: 10px; border-radius: 10px; margin-bottom: 10px; }
+        .titulo-piloto { font-size: 14px; font-weight: bold; color: #555; text-align: left; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <img src="https://raw.githubusercontent.com/racekrono/adv/refs/heads/main/Logo.png" alt="Logo">
+        
+        <input type="text" id="etapa" placeholder="Nome da Etapa (ex: GP Brasil)" oninput="atualizarEtapaFirebase()">
+        
+        <select id="subEtapa">
+            <option value="e1">BATERIA 1 (Lançar Voltas 1 e 2)</option>
+            <option value="e2">BATERIA 2 (Lançar Voltas 1 e 2)</option>
+        </select>
+
+        <select id="categoria" onchange="carregarPilotosPorCategoria()">
+            <option value="PRODUCTION">PRODUCTION</option>
+            <option value="SUPER PRODUCTION">SUPER PRODUCTION</option>
+            <option value="PROTOTIPO">PROTOTIPO</option>
+            <option value="UTV">UTV</option>
+            <option value="INICIANTE">INICIANTE</option>
+        </select>
+
+        <!-- Bloco Piloto 1 -->
+        <div class="bloco-piloto">
+            <div class="titulo-piloto">Piloto 1</div>
+            <select id="pilotoSelect1" class="piloto-select">
+                <option value="">Carregando pilotos...</option>
+            </select>
+            <input type="text" id="tempo1" class="campo-tempo" placeholder="00:00:000" maxlength="9">
+        </div>
+
+        <!-- Bloco Piloto 2 -->
+        <div class="bloco-piloto">
+            <div class="titulo-piloto">Piloto 2</div>
+            <select id="pilotoSelect2" class="piloto-select">
+                <option value="">Carregando pilotos...</option>
+            </select>
+            <input type="text" id="tempo2" class="campo-tempo" placeholder="00:00:000" maxlength="9">
+        </div>
+
+        <button class="btn-save" onclick="enviarDados()">SALVAR VOLTAS</button>
+        <button class="btn-pdf" onclick="exportarPDF()">RELATÓRIO DE PROVA</button>
+        
+        <hr>
+        <button class="btn-nav" onclick="window.location.href='cadastro_pilotos.html'" style="background-color: #a5a5a5;">CADASTRAR PILOTOS</button>
+        <button class="btn-nav" onclick="window.location.href='alteracao.html'">ALTERAR DADOS</button>
+        <button class="btn-nav" onclick="window.location.href='index.html'" style="background-color: #6c757d;">VER RESULTADOS</button>
+        
+        <button class="btn-clear" onclick="limparBanco()">LIMPAR TODOS OS TEMPOS</button>
+    </div>
+
+    <!-- Scripts do Firebase compatíveis -->
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+
+    <script>
+        var firebaseConfig = {
+            apiKey: "AIzaSyC4ajZM_W0_qGOlrlRoPn6DUsUBUm4qAcc",
+            authDomain: "crono-rrb.firebaseapp.com",
+            databaseURL: "https://crono-rrb-default-rtdb.firebaseio.com",
+            projectId: "crono-rrb",
+            storageBucket: "crono-rrb.firebasestorage.app",
+            messagingSenderId: "1472207720",
+            appId: "1:1472207720:web:11502aed4117b1fda714dd"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        var db = firebase.database();
+
+        db.ref('configuracao/etapaAtual').on('value', function(snapshot) {
+            if(snapshot.exists()) {
+                document.getElementById('etapa').value = snapshot.val();
+            }
+        });
+
+        function atualizarEtapaFirebase() {
+            var nome = document.getElementById('etapa').value;
+            db.ref('configuracao').update({ etapaAtual: nome });
+        }
+
+        function carregarPilotosPorCategoria() {
+            var catSelecionada = document.getElementById('categoria').value;
+            var s1 = document.getElementById('pilotoSelect1');
+            var s2 = document.getElementById('pilotoSelect2');
+            
+            s1.innerHTML = "<option value=''>Carregando pilotos...</option>";
+            s2.innerHTML = "<option value=''>Carregando pilotos...</option>";
+
+            db.ref('lista_pilotos').orderByChild('categoria').equalTo(catSelecionada).once('value')
+                .then(function(snapshot) {
+                    var dados = snapshot.val();
+                    
+                    if (!dados) {
+                        s1.innerHTML = "<option value=''>NENHUM PILOTO CADASTRADO</option>";
+                        s2.innerHTML = "<option value=''>NENHUM PILOTO CADASTRADO</option>";
+                        return;
+                    }
+
+                    var opcoes = "<option value=''>SELECIONE O PILOTO...</option>";
+                    for (var key in dados) {
+                        if (dados[key] && dados[key].nome) {
+                            opcoes += "<option value='" + dados[key].nome + "'>" + dados[key].nome + "</option>";
+                        }
+                    }
+                    s1.innerHTML = opcoes;
+                    s2.innerHTML = opcoes;
+                })
+                .catch(function(err) {
+                    console.error(err);
+                    s1.innerHTML = "<option value=''>ERRO AO CARREGAR</option>";
+                    s2.innerHTML = "<option value=''>ERRO AO CARREGAR</option>";
+                });
+        }
+
+        // Aplicar máscara aos campos de tempo
+        document.querySelectorAll('.campo-tempo').forEach(function(el) {
+            el.addEventListener('input', function (e) {
+                var v = e.target.value.replace(/\D/g, '');
+                if (v.length > 4) {
+                    v = v.replace(/(\d{2})(\d{2})(\d{3})/, "$1:$2:$3");
+                } else if (v.length > 2) {
+                    v = v.replace(/(\d{2})(\d{2})/, "$1:$2");
+                }
+                e.target.value = v;
+            });
+        });
+
+        // Função auxiliar para salvar a volta de um piloto individualmente
+        function salvarVoltaUnica(etapa, subEtapa, categoria, piloto, tempo) {
+            return new Promise(function(resolve, reject) {
+                if (!piloto || piloto === "" || piloto === "SELECIONE O PILOTO..." || tempo.length < 9) {
+                    resolve(null); // Ignora se o campo estiver vazio ou incompleto
+                    return;
+                }
+
+                var idPiloto = btoa(categoria + "_" + piloto).replace(/=/g, "");
+                var ref = db.ref('pilotos/' + idPiloto);
+
+                ref.once('value').then(function(snapshot) {
+                    var pData = snapshot.val();
+                    var campoV1 = subEtapa + "_v1";
+                    var campoV2 = subEtapa + "_v2";
+
+                    if (!pData) {
+                        var novoPiloto = {
+                            categoria: categoria,
+                            piloto: piloto,
+                            e1_v1: "00:00:000", e1_v2: "00:00:000",
+                            e2_v1: "00:00:000", e2_v2: "00:00:000"
+                        };
+                        novoPiloto[campoV1] = tempo;
+                        return ref.set(novoPiloto).then(function() {
+                            resolve(piloto + ": Volta 1 salva!");
+                        });
+                    } else {
+                        var dados = {};
+                        if (!pData[campoV1] || pData[campoV1] === "00:00:000") {
+                            dados[campoV1] = tempo;
+                            return ref.update(dados).then(function() {
+                                resolve(piloto + ": Volta 1 salva!");
+                            });
+                        } else if (!pData[campoV2] || pData[campoV2] === "00:00:000") {
+                            dados[campoV2] = tempo;
+                            return ref.update(dados).then(function() {
+                                resolve(piloto + ": Volta 2 salva!");
+                            });
+                        } else {
+                            resolve(piloto + ": Já possui as 2 voltas registradas.");
+                        }
+                    }
+                }).catch(reject);
+            });
+        }
+
+        // Salvar dados de ambos os pilotos selecionados
+        function enviarDados() {
+            var etapa = document.getElementById('etapa').value;
+            var subEtapa = document.getElementById('subEtapa').value; 
+            var categoria = document.getElementById('categoria').value;
+
+            var piloto1 = document.getElementById('pilotoSelect1').value; 
+            var tempo1 = document.getElementById('tempo1').value;
+
+            var piloto2 = document.getElementById('pilotoSelect2').value; 
+            var tempo2 = document.getElementById('tempo2').value;
+
+            if (!etapa) {
+                alert("Preencha o nome da etapa.");
+                return;
+            }
+
+            var temP1 = piloto1 && piloto1 !== "SELECIONE O PILOTO..." && tempo1.length === 9;
+            var temP2 = piloto2 && piloto2 !== "SELECIONE O PILOTO..." && tempo2.length === 9;
+
+            if (!temP1 && !temP2) {
+                alert("Preencha o tempo completo (00:00:000) de ao menos um piloto.");
+                return;
+            }
+
+            db.ref('configuracao').update({ subEtapaAtiva: subEtapa });
+
+            Promise.all([
+                salvarVoltaUnica(etapa, subEtapa, categoria, piloto1, tempo1),
+                salvarVoltaUnica(etapa, subEtapa, categoria, piloto2, tempo2)
+            ]).then(function(resultados) {
+                var mens = resultados.filter(Boolean).join("\n");
+                if (mens) alert(mens);
+                if (temP1) document.getElementById('tempo1').value = "";
+                if (temP2) document.getElementById('tempo2').value = "";
+            }).catch(function(err) {
+                alert("Erro ao salvar: " + err.message);
+            });
+        }
+
+        function limparBanco() {
+            var senha = prompt("CUIDADO: Isso apagará OS TEMPOS das voltas.\nDigite a senha para confirmar:");
+            if (senha === "75999862628") {
+                db.ref('pilotos').remove()
+                    .then(function() { return db.ref('configuracao').remove(); })
+                    .then(function() {
+                        alert("Os tempos foram resetados com sucesso!");
+                        window.location.reload();
+                    })
+                    .catch(function(error) {
+                        alert("Erro ao limpar banco: " + error.message);
+                    });
+            } else if (senha !== null) {
+                alert("Senha incorreta!");
+            }
+        }
+
+        function tParaMs(t) {
+            if (!t || t === "00:00:000") return 0;
+            var p = t.split(':');
+            return (parseInt(p[0]) * 60000) + (parseInt(p[1]) * 1000) + parseInt(p[2]);
+        }
+        
+        function msParaT(ms) {
+            if (ms === 0) return "00:00:000";
+            var min = Math.floor(ms / 60000);
+            var seg = Math.floor((ms % 60000) / 1000);
+            var mil = ms % 1000;
+            return (min < 10 ? "0" : "") + min + ":" + (seg < 10 ? "0" : "") + seg + ":" + (mil < 100 ? (mil < 10 ? "00" : "0") : "") + mil;
+        }
+
+        function exportarPDF() {
+            var { jsPDF } = window.jspdf;
+            var doc = new jsPDF();
+            
+            db.ref('pilotos').once('value').then(function(snapshot) {
+                var data = snapshot.val();
+                return db.ref('configuracao/etapaAtual').once('value').then(function(etapaSnap) {
+                    var nomeEtapa = etapaSnap.val() || "Geral";
+
+                    if (!data) { 
+                        alert("Não há dados de tempos registrados para exportar."); 
+                        return; 
+                    }
+
+                    var listaPilotos = [];
+                    for (var k in data) {
+                        var p = data[k];
+                        var e1v1 = p.e1_v1 || "00:00:000";
+                        var e1v2 = p.e1_v2 || "00:00:000";
+                        var e2v1 = p.e2_v1 || "00:00:000";
+                        var e2v2 = p.e2_v2 || "00:00:000";
+
+                        var totalE1Ms = tParaMs(e1v1) + tParaMs(e1v2);
+                        var totalE2Ms = tParaMs(e2v1) + tParaMs(e2v2);
+                        var somaGeralMs = totalE1Ms + totalE2Ms;
+
+                        p.tempoE1Str = msParaT(totalE1Ms);
+                        p.tempoE2Str = msParaT(totalE2Ms);
+                        p.totalGeralMs = somaGeralMs;
+                        p.totalGeralStr = msParaT(somaGeralMs);
+
+                        listaPilotos.push(p);
+                    }
+
+                    var logoUrl = "https://raw.githubusercontent.com/racekrono/adv/refs/heads/main/Logo.png";
+                    var img = new Image();
+                    img.src = logoUrl;
+                    img.crossOrigin = "Anonymous"; //
+
+                    img.onload = function() {
+                        doc.addImage(img, 'PNG', 15, 12, 26, 26); //
+                        doc.setFontSize(18);
+                        doc.setTextColor(0, 0, 0);
+                        doc.setFont("helvetica", "bold");
+                        doc.text("RELATÓRIO DE PROVA", 46, 18); //
+                        doc.setFontSize(12);
+                        doc.text("CAMPEONATO BAIANO DE RALLY INDOOR 4X4", 46, 25); //    
+                        doc.setFontSize(12);
+                        doc.setFont("helvetica", "normal");
+                        doc.text(nomeEtapa, 46, 30); //
+                        doc.setFontSize(10);
+                        doc.setTextColor(100, 100, 100);
+                        doc.text(new Date().toLocaleString(), 46, 36); //
+                        
+                        var y = 52;
+                        var cats = ["PRODUCTION", "SUPER PRODUCTION", "PROTOTIPO", "UTV", "INICIANTE"];
+
+                        cats.forEach(function(cat) {
+                            var filtrados = listaPilotos.filter(function(p) { return p.categoria === cat; });
+                            filtrados.sort(function(a, b) { return a.totalGeralMs - b.totalGeralMs; });
+                            
+                            if (filtrados.length > 0) {
+                                doc.setFontSize(14);
+                                doc.setTextColor(40, 40, 40);
+                                doc.setFont("helvetica", "bold");
+                                doc.text("Categoria: " + cat, 15, y); //
+                                
+                                var rows = filtrados.map(function(p, i) { 
+                                    return [(i+1) + "º", p.piloto, p.tempoE1Str, p.tempoE2Str, p.totalGeralStr]; 
+                                });
+                                
+                                doc.autoTable({
+                                    startY: y + 5,
+                                    head: [['Pos', 'Piloto', 'Bateria 01', 'Bateria 02', 'Total Acumulado']],
+                                    body: rows,
+                                    theme: 'grid',
+                                    headStyles: { fillColor: [243, 156, 18], textColor: [255, 255, 255], fontStyle: 'bold' },
+                                    styles: { fontSize: 10, font: 'helvetica' }
+                                });
+                                y = doc.lastAutoTable.finalY + 15; //
+                            }
+                        });
+                        
+                        doc.save("Resultado_Acumulado_" + nomeEtapa.replace(/\s+/g, '_') + ".pdf");
+                    };
+
+                    img.onerror = function() {
+                        alert("Não foi possível carregar a imagem da logomarca, gerando relatório sem ela.");
+                        doc.setFontSize(18);
+                        doc.text("RELATÓRIO DE PROVA", 15, 20);
+                        doc.save("Resultado_Acumulado_" + nomeEtapa.replace(/\s+/g, '_') + ".pdf");
+                    };
+                });
+            }).catch(function(err) {
+                alert("Erro ao gerar PDF: " + err.message);
+            });
+        }
+
+        carregarPilotosPorCategoria();
+    </script>
+</body>
+</html>
