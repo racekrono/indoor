@@ -2,33 +2,259 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ranking em Tempo Real - Crono</title>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px; background-color: #f8f9fa; }
-        .header-container { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .qr-code { width: 90px; height: 90px; }
-        .etapa-titulo { font-size: 24px; font-weight: bold; color: #333; margin: 0; }
-        .refresh-info { color: #e74c3c; font-weight: bold; font-size: 14px; }
-        table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; margin-bottom: 30px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
-        th { background-color: #343a40; color: white; }
-        h3 { color: #2c3e50; border-left: 5px solid #27ae60; padding-left: 10px; margin-top: 20px; }
+        :root {
+            --bg-overlay: rgba(15, 23, 42, 0.88);
+            --card-bg: rgba(30, 41, 59, 0.75);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            color: var(--text-main);
+            background: url('https://raw.githubusercontent.com/racekrono/indoor/refs/heads/main/2banner.jpg') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+        }
+
+        /* Overlay escuro de fundo para garantir leitura */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at top, rgba(15, 23, 42, 0.75), rgba(10, 15, 26, 0.95));
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .header-container { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: var(--card-bg); 
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--card-border);
+            padding: 20px 25px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); 
+            margin-bottom: 30px; 
+        }
+
+        .etapa-titulo { 
+            font-size: 26px; 
+            font-weight: 800; 
+            color: #ffffff; 
+            margin: 0; 
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, #ffffff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .etapa-subtitulo {
+            margin: 6px 0 0 0; 
+            color: var(--text-muted); 
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .qr-code { 
+            width: 80px; 
+            height: 80px; 
+            border-radius: 8px;
+            border: 2px solid var(--card-border);
+            background: white;
+            padding: 4px;
+        }
+
+        .refresh-info { 
+            color: var(--accent-green); 
+            font-weight: 600; 
+            font-size: 13px; 
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 6px;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-green);
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
+            animation: pulse 1.8s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .cat-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        h3 { 
+            color: var(--accent-orange); 
+            margin: 0 0 15px 0; 
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h3::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 20px;
+            background: var(--accent-orange);
+            border-radius: 2px;
+        }
+
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 5px; 
+        }
+
+        th, td { 
+            padding: 14px 16px; 
+            text-align: left; 
+        }
+
+        th { 
+            background-color: rgba(15, 23, 42, 0.6); 
+            color: var(--text-muted); 
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s ease;
+        }
+
+        tr:last-child {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .pos {
+            font-weight: 700;
+            width: 60px;
+        }
+
+        .pos-1 { color: #f59e0b; font-size: 16px; } /* Ouro */
+        .pos-2 { color: #94a3b8; font-size: 16px; } /* Prata */
+        .pos-3 { color: #d97706; font-size: 16px; } /* Bronze */
+
+        .piloto-nome {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .tempo-destaque {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            font-weight: 700;
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 4px 10px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        .mensagem-vazia {
+            text-align: center;
+            padding: 40px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .header-container {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+            .refresh-info {
+                justify-content: center;
+            }
+            th, td {
+                padding: 10px;
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <div class="header-container">
-        <div>
-            <p class="etapa-titulo" id="displayEtapa">CONECTANDO AO BANCO...</p>
-            <p id="dataRelatorio" style="margin: 5px 0; color: #666;"></p>
+    <div class="container">
+        <div class="header-container">
+            <div>
+                <p class="etapa-titulo" id="displayEtapa">CONECTANDO AO BANCO...</p>
+                <p class="etapa-subtitulo" id="dataRelatorio"></p>
+            </div>
+            <div style="text-align: right;">
+                <img src="https://raw.githubusercontent.com/racekrono/indoor/refs/heads/main/QR.png" class="qr-code" alt="QR Code">
+                <div class="refresh-info">
+                    <span class="pulse-dot"></span> Ao Vivo
+                </div>
+            </div>
         </div>
-        <div style="text-align: right;">
-            <img src="https://raw.githubusercontent.com/racekrono/indoor/refs/heads/main/QR.png" class="qr-code" alt="QR Code">
-            <div class="refresh-info">Sincronizado em Tempo Real</div>
+
+        <div id="conteudoTabelas">
+            <div class="mensagem-vazia">Carregando classificações em tempo real...</div>
         </div>
     </div>
-
-    <div id="conteudoTabelas">Carregando classificações...</div>
 
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
@@ -46,7 +272,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let subEtapaGlobal = "e1"; // Padrão inicial
+        let subEtapaGlobal = "e1";
         let nomeEtapaGlobal = "PROVA";
 
         function tParaMs(t) {
@@ -55,46 +281,34 @@
             return (parseInt(p[0]) * 60000) + (parseInt(p[1]) * 1000) + parseInt(p[2]);
         }
 
-        function msParaT(ms) {
-            if (ms === 0) return "00:00:000";
-            const min = Math.floor(ms / 60000);
-            const seg = Math.floor((ms % 60000) / 1000);
-            const mil = ms % 1000;
-            return `${String(min).padStart(2,'0')}:${String(seg).padStart(2,'0')}:${String(mil).padStart(3,'0')}`;
-        }
-
-        // 1. Escuta alterações na configuração (Nome da Etapa e Etapa Ativa)
+        // Monitora configurações do evento
         db.ref('configuracao').on('value', snapshot => {
             const config = snapshot.val() || {};
             nomeEtapaGlobal = config.etapaAtual || "PROVA";
             subEtapaGlobal = config.subEtapaAtiva || "e1";
-            
-            // Força a atualização dos títulos e dados sempre que o painel mudar de etapa
             processarEExibir();
         });
 
-        // 2. Escuta alterações nos pilotos (Sempre que uma nova volta for salva)
+        // Monitora tempos em tempo real
         db.ref('pilotos').on('value', snapshot => {
             processarEExibir();
         });
 
         function processarEExibir() {
             const numEtapaTexto = subEtapaGlobal === 'e1' ? "BATERIA 01" : "BATERIA 02";
-            document.getElementById('displayEtapa').innerText = `${nomeEtapaGlobal} - ${numEtapaTexto}`;
+            document.getElementById('displayEtapa').innerText = `${nomeEtapaGlobal} • ${numEtapaTexto}`;
             document.getElementById('dataRelatorio').innerText = "Data: " + new Date().toLocaleDateString();
 
             db.ref('pilotos').once('value', snapshot => {
                 const data = snapshot.val();
                 if (!data) {
-                    document.getElementById('conteudoTabelas').innerHTML = "<p>Nenhum tempo registrado para esta etapa.</p>";
+                    document.getElementById('conteudoTabelas').innerHTML = '<div class="mensagem-vazia">Nenhum tempo registrado até o momento.</div>';
                     return;
                 }
 
                 let lista = [];
                 for (let k in data) {
                     const p = data[k];
-                    
-                    // Puxa apenas a volta 1 da bateria ativa
                     const v1 = p[`${subEtapaGlobal}_v1`] || "00:00:000";
                     const totalMs = tParaMs(v1);
 
@@ -109,17 +323,44 @@
                 let html = '';
 
                 categorias.forEach(cat => {
-                    let filtrados = lista.filter(p => p.categoria === cat).sort((a,b) => a.totalMs - b.totalMs);
+                    let filtrados = lista.filter(p => p.categoria === cat && p.totalMs > 0).sort((a,b) => a.totalMs - b.totalMs);
+                    
                     if (filtrados.length > 0) {
-                        html += `<h3>CATEGORIA: ${cat}</h3><table><thead><tr><th>Pos</th><th>Piloto</th><th>Tempo da Bateria</th></tr></thead><tbody>`;
+                        html += `
+                        <div class="cat-card">
+                            <h3>CATEGORIA: ${cat}</h3>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width: 80px;">Pos</th>
+                                        <th>Piloto</th>
+                                        <th style="text-align: right;">Tempo da Bateria</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+                        
                         filtrados.forEach((p, i) => {
-                            html += `<tr><td>${i+1}º</td><td>${p.piloto}</td><td><strong>${p.tempoStr}</strong></td></tr>`;
+                            let posClass = "";
+                            if (i === 0) posClass = "pos-1";
+                            else if (i === 1) posClass = "pos-2";
+                            else if (i === 2) posClass = "pos-3";
+
+                            html += `
+                                <tr>
+                                    <td class="pos ${posClass}">${i+1}º</td>
+                                    <td class="piloto-nome">${p.piloto}</td>
+                                    <td style="text-align: right;"><span class="tempo-destaque">${p.tempoStr}</span></td>
+                                </tr>`;
                         });
-                        html += `</tbody></table>`;
+                        
+                        html += `
+                                </tbody>
+                            </table>
+                        </div>`;
                     }
                 });
                 
-                document.getElementById('conteudoTabelas').innerHTML = html || "<p>Nenhum tempo registrado para esta etapa.</p>";
+                document.getElementById('conteudoTabelas').innerHTML = html || '<div class="mensagem-vazia">Aguardando lançamento dos tempos...</div>';
             });
         }
     </script>
