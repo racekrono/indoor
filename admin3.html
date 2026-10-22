@@ -41,6 +41,8 @@
             <option value="SUPER PRODUCTION">SUPER PRODUCTION</option>
             <option value="PROTOTIPO">PROTOTIPO</option>
             <option value="UTV">UTV</option>
+            <option value="4X2 TNR">4X2 TNR</option>
+            <option value="4x2 TNR CONVIDADO">4x2 TNR CONVIDADO</option>
             <option value="INICIANTE">INICIANTE</option>
         </select>
 
@@ -280,7 +282,7 @@
                         doc.text(new Date().toLocaleString(), 46, 36);
                         
                         var y = 52;
-                        var cats = ["PRODUCTION", "SUPER PRODUCTION", "PROTOTIPO", "UTV", "INICIANTE"];
+                        var cats = ["PRODUCTION", "SUPER PRODUCTION", "PROTOTIPO", "UTV", "4X2 TNR", "4X2 TNR CONVIDADO", "INICIANTE"];
 
                         cats.forEach(function(cat) {
                             var filtrados = listaPilotos.filter(function(p) { return p.categoria === cat; });
